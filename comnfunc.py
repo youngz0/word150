@@ -245,7 +245,7 @@ def step0_getjs2csvpre(whichword):
             if '斜度过大' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_tx'
             # ----------------------------------------------------------------------------------------------------------
-            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] or '行笔方向不准' in df3.loc[idx,'meaning']\
+            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] \
                 or '顿笔方向不准' in df3.loc[idx,'meaning'] or '出钩方向不准' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'angle_3points'
                 df3.loc[idx,'whichrowpnb'] = 'ele'
@@ -350,10 +350,10 @@ def getcsvinfo(whichword):
     # pd.read_excel(,)
     # filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.csv'
     filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.xlsx'
-    df_1 = pd.read_excel(filenm,sep=',',index_col=0,nrows=13,usecols=[0,1])
+    df_1 = pd.read_excel(filenm,index_col=0,nrows=13,usecols=[0,1])
     dict_1 = df_1.to_dict()[df_1.columns[0]]
-    # df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)))
-    df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
+    # df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)))
+    df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
     df_2 = df_2[df_2['delete_or_not'] < 2]
 
     return dict_1,df_2
