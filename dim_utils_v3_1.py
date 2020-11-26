@@ -477,6 +477,8 @@ class evaluate_len_single:
             v_eg_len_ = vec_len(v_eg)
 
             len_ratio = v_len_ / (v_eg_len_+epsilon)
+            if len_ratio<0.2:
+                len_ratio = 0
             score_l.append(len_ratio)
 
 
@@ -743,18 +745,26 @@ class evaluate_angle_2lines:
         self.p_l = p_l
 
     def calculate_dim(self):
-        dim_key_l,point_l_l1,point_l_l2,dim_CN_l = unload_data4(self.p_ang_d)
+
         score_l = []
+        dim_key_l = []
+        dim_CN_l = []
 
-        for idx, ele in enumerate(point_l_l1):
+        for data in self.p_ang_d:
 
-            line_1_point_l = ele[0] 
-            line_2_point_l = point_l_l2[idx][0]            
+            dim_key,point_l_l1,point_l_l2,dim_CN = unload_data4(data)
+
+            dim_key_l.append(dim_key[0])
+
+        # for idx, ele in enumerate(point_l_l1):
+
+            line_1_point_l = point_l_l1[0][0] 
+            line_2_point_l = point_l_l2[0][0]            
             k1,b1 = straight_line(line_1_point_l)
             k2,b2 = straight_line(line_2_point_l)
 
-            eg_line_1_point_l = ele[1] 
-            eg_line_2_point_l = point_l_l2[idx][1]            
+            eg_line_1_point_l = point_l_l1[0][1] 
+            eg_line_2_point_l = point_l_l2[0][1]            
             eg_k1,eg_b1 = straight_line(eg_line_1_point_l)
             eg_k2,eg_b2 = straight_line(eg_line_2_point_l)
 
@@ -794,18 +804,18 @@ class evaluate_angle_2lines:
             score_l.append(ang_ratio)
 
 
-            plt_line_1 = [[100,100*k1+b1],[400,400*k1+b1]]
-            plt_line_2 = [[100,100*k2+b2],[400,400*k2+b2]]
+            # plt_line_1 = [[100,100*k1+b1],[400,400*k1+b1]]
+            # plt_line_2 = [[100,100*k2+b2],[400,400*k2+b2]]
 
-            eg_plt_line_1 = [[100,100*eg_k1+eg_b1],[400,400*eg_k1+eg_b1]]
-            eg_plt_line_2 = [[100,100*eg_k2+eg_b2],[400,400*eg_k2+eg_b2]]
+            # eg_plt_line_1 = [[100,100*eg_k1+eg_b1],[400,400*eg_k1+eg_b1]]
+            # eg_plt_line_2 = [[100,100*eg_k2+eg_b2],[400,400*eg_k2+eg_b2]]
 
             # xx,yy=getXY([p1,p2])
 
             # l.xs_line.append(xx)
             # l.ys_line.append(yy)
             # l.marks_line.append('b-')
-            # l.reviews_line.append(dim_CN_l[idx]+' 夹角比值: '+str(ang_ratio))
+            # l.reviews_line.append(dim_CN[0]+' 夹角比值: '+str(ang_ratio))
 
             # xx,yy=getXY([p2,p3])
 
@@ -1154,6 +1164,7 @@ class evaluate_radian:
         return dim_key_l,score_l
 
 
+
 class evaluate_2parts_size_ratio:
     """
     判断字的两个组成部分的大小比例
@@ -1165,19 +1176,23 @@ class evaluate_2parts_size_ratio:
         self.p_l = p_l
     
     def calculate_dim(self):
-        
-        dim_key_l, points1_l_l, points2_l_l, dim_CN_l = unload_data4(self.p_data_d)
+        # self.p_data_d = [['dim1',load_data(),load_data(),'维度1']]
+
+        # dim_key_l, points1_l_l, points2_l_l, dim_CN_l = unload_data4(self.p_data_d)
 
         score_l = []
-        # dim_size_CN_l =[]
-        for idx,ele1 in enumerate(points1_l_l):
-            points1_l = ele1[0]
-            eg_points1_l = ele1[1]
-            # plot_point1_l = ele1[2]
+        dim_key_l = []
+        dim_CN_l = []
 
-            points2_l = points2_l_l[idx][0]
-            eg_points2_l = points2_l_l[idx][1]
-            # plot_point2_l = points2_l_l[idx][2]
+        for data in self.p_data_d:
+            dim_key, points1_l_l, points2_l_l, dim_CN = unload_data4(data)
+
+
+            points1_l = points1_l_l[0][0]
+            eg_points1_l = points1_l_l[0][1]
+            points2_l = points2_l_l[0][0]
+            eg_points2_l = points2_l_l[0][1]
+
 
             stroke_trains1 = nudged.estimate(eg_points1_l,points1_l)
             stroke_scale1 = stroke_trains1.get_scale()  
@@ -1187,12 +1202,20 @@ class evaluate_2parts_size_ratio:
             scale_ratio = stroke_scale1/stroke_scale2 
 
             score_l.append(scale_ratio)
+            dim_key_l.append(dim_key[0])
 
-            # xx,yy=getXY([[599,599]])
+            # xx,yy = getXY(points1_l)
             # l.xs_line.append(xx)
             # l.ys_line.append(yy)
             # l.marks_line.append('b.')
-            # l.reviews_line.append(dim_CN_l[idx]+' ２部分scale比率: '+("%.3f"%scale_ratio))
+            # l.reviews_line.append(dim_CN[0]+'  两部分拟合到范字scale的比值: '+("%.3f"%scale_ratio))
+            
+            # xx,yy = getXY(points2_l)
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append('g.')
+            # l.reviews_line.append("")
+
 
         return dim_key_l,score_l
 
@@ -1312,6 +1335,211 @@ class evaluate_symmetry:
 #新加函数
 # # 多横平行关系
 
+class evaluate_2angle_3points:
+    
+    """[summary]
+    起收笔方向不准      min of two angle details from qi (begin) and shou (end) '
+    Returns:
+        score_l: 所有计算的角度的值构成的列表　，例：[100.11,50.233]
+    """
+    def __init__(self,p_ang_d, p_Transed_l, eg_p_l, p_l):
+        self.p_ang_d = p_ang_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l        
+
+    def calculate_dim(self):
+
+
+        score_l = []
+        # dim_key_l, stroke1_p_l, stroke2_p_l, dim_CN_l = unload_data4(p_len_d)
+        dim_key_l, ll, dim_CN_l = unload_data_n(self.p_ang_d)
+        n = len(ll)
+        for j in range(1, n + 1):
+            exec("stroke{}_p_l=ll[{}]".format(j, j - 1))
+
+        for idx, ele in enumerate(locals()['stroke1_p_l']):
+
+            stroke1_points = ele[0]
+            eg_stroke1_points = ele[1]
+
+            p1 = stroke1_points[0]
+            p2 = stroke1_points[1]
+            p3 = stroke1_points[2]
+
+            eg_p1 = eg_stroke1_points[0]
+            eg_p2 = eg_stroke1_points[1]
+            eg_p3 = eg_stroke1_points[2]
+            plot_point_l = ele[2]
+
+
+            v2_1 = vec(p2, p1)
+
+            p_x = [(p1[0] + p3[0]) / 2, (p1[1] + p3[1]) / 2]
+            eg_p_x = [(eg_p1[0] + eg_p3[0]) / 2, (eg_p1[1] + eg_p3[1]) / 2]
+
+            v2_x = vec(p2, p_x)
+            v2_3 = vec(p2, p3)
+            ang1 = angle(v2_1, v2_x)
+            ang2 = angle(v2_x, v2_3)
+            ang = ang1 + ang2
+
+            eg_v2_1 = vec(eg_p2, eg_p1)
+            # eg_v2_x = vec(eg_p2,[(eg_p1[0]+eg_p2[0])/2,(eg_p1[1]+eg_p2[1])/2])
+            # eg_v2_x = vec(eg_p2,[eg_p1[0],eg_p2[1]])
+            eg_v2_x = vec(eg_p2, eg_p_x)
+
+            eg_v2_3 = vec(eg_p2, eg_p3)
+            eg_ang1 = angle(eg_v2_1, eg_v2_x)
+            eg_ang2 = angle(eg_v2_x, eg_v2_3)
+            eg_ang = eg_ang1 + eg_ang2
+
+            vec12 = vec(p1, p2)
+            vec23 = vec(p2, p3)
+            eg_vec12 = vec(eg_p1, eg_p2)
+            eg_vec23 = vec(eg_p2, eg_p3)
+
+            if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+                ang = 0
+
+            ang_ratio1 = ang / (eg_ang + epsilon)
+
+            # if vis_ornot:
+            #     xx, yy = getXY([p1, p2, p3])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('b-')
+            #     l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
+
+            #     xx, yy = getXY([eg_p1, eg_p2, eg_p3])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('r-')
+            #     l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
+
+            stroke2_points = locals()['stroke2_p_l'][idx][0]
+            eg_stroke2_points = locals()['stroke2_p_l'][idx][1]
+
+            p1 = stroke2_points[0]
+            p2 = stroke2_points[1]
+            p3 = stroke2_points[2]
+
+            eg_p1 = eg_stroke2_points[0]
+            eg_p2 = eg_stroke2_points[1]
+            eg_p3 = eg_stroke2_points[2]
+            plot_point_l = ele[2]
+
+
+            v2_1 = vec(p2, p1)
+
+            p_x = [(p1[0] + p3[0]) / 2, (p1[1] + p3[1]) / 2]
+            eg_p_x = [(eg_p1[0] + eg_p3[0]) / 2, (eg_p1[1] + eg_p3[1]) / 2]
+
+            v2_x = vec(p2, p_x)
+            v2_3 = vec(p2, p3)
+            ang1 = angle(v2_1, v2_x)
+            ang2 = angle(v2_x, v2_3)
+            ang = ang1 + ang2
+
+            eg_v2_1 = vec(eg_p2, eg_p1)
+            # eg_v2_x = vec(eg_p2,[(eg_p1[0]+eg_p2[0])/2,(eg_p1[1]+eg_p2[1])/2])
+            # eg_v2_x = vec(eg_p2,[eg_p1[0],eg_p2[1]])
+            eg_v2_x = vec(eg_p2, eg_p_x)
+
+            eg_v2_3 = vec(eg_p2, eg_p3)
+            eg_ang1 = angle(eg_v2_1, eg_v2_x)
+            eg_ang2 = angle(eg_v2_x, eg_v2_3)
+            eg_ang = eg_ang1 + eg_ang2
+
+            vec12 = vec(p1, p2)
+            vec23 = vec(p2, p3)
+            eg_vec12 = vec(eg_p1, eg_p2)
+            eg_vec23 = vec(eg_p2, eg_p3)
+
+            if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+                ang = 0
+
+            ang_ratio2 = ang / (eg_ang + epsilon)
+
+
+            score_l.append(min(ang_ratio1,ang_ratio2))
+
+            # if vis_ornot:
+            #     xx, yy = getXY([p1, p2, p3])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('b-')
+            #     l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
+
+            #     xx, yy = getXY([eg_p1, eg_p2, eg_p3])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('r-')
+            #     l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
+
+            #     xx, yy = getXY([p_x])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('b.')
+            #     l.reviews_line.append(dim_CN_l[idx] + ' 角度比值: ' + str(score_l[-1]))
+
+        return dim_key_l, score_l
+
+
+
+class evaluate_word_shape:
+    """
+        字的高与宽的比值shape_r与范字的高与宽的eg_shape_r的比
+    """
+    
+    def __init__(self,p_data_d, p_Transed_l, eg_p_l, p_l):
+        self.p_data_d = p_data_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+    
+    def calculate_dim(self):
+
+        dim_key_l, point_l_l, dim_CN_l = unload_data3(self.p_data_d)
+
+        score_l = []
+
+        for idx, ele in enumerate(point_l_l):
+            
+            pos_min_x = np.min([i[0] for i in ele[0]])
+            pos_max_x = np.max([i[0] for i in ele[0]])
+            pos_min_y = np.min([i[1] for i in ele[0]])
+            pos_max_y = np.max([i[1] for i in ele[0]])
+
+            eg_pos_min_x = np.min([i[0] for i in ele[1]])
+            eg_pos_max_x = np.max([i[0] for i in ele[1]])
+            eg_pos_min_y = np.min([i[1] for i in ele[1]])
+            eg_pos_max_y = np.max([i[1] for i in ele[1]])
+
+            shape_r = (pos_max_y-pos_min_y) / (pos_max_x-pos_min_x+epsilon)
+            eg_shape_r = (eg_pos_max_y-eg_pos_min_y) / (eg_pos_max_x-eg_pos_min_x+epsilon)
+
+            shape_ratio = shape_r / eg_shape_r
+            score_l.append(shape_ratio)
+
+
+            # plt_p_list = [[pos_min_x,pos_min_y],[pos_max_x,pos_min_y],[pos_max_x,pos_max_y],[pos_min_x,pos_max_y],[pos_min_x,pos_min_y]]
+            # eg_plt_p_list = [[eg_pos_min_x,eg_pos_min_y],[eg_pos_max_x,eg_pos_min_y],[eg_pos_max_x,eg_pos_max_y],[eg_pos_min_x,eg_pos_max_y],[eg_pos_min_x,eg_pos_min_y]]
+
+            # xx,yy=getXY(plt_p_list)
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append(color_l[idx])
+            # l.reviews_line.append(dim_CN_l[idx]+' 高与宽的比值与范字的比值: '+("%.3f"%shape_ratio))
+
+            # xx,yy=getXY(eg_plt_p_list)
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append('r-')
+            # l.reviews_line.append('范字高与宽比值： '+("%.3f"%eg_shape_r))
+
+
+        return dim_key_l ,score_l
 
 class evaluate_word_polygon:
     """判断字的多边形形状，例：三角形，正方形，长方形，梯形，菱形，理论上n变形也可以
@@ -1358,15 +1586,6 @@ class evaluate_word_polygon:
 
 
         return dim_key_l,score_l
-
-
-
-
-
-
-
-
-
 
 
 class evaluate_nline_parallel:
@@ -1430,8 +1649,6 @@ class evaluate_nline_parallel:
         return dim_key_l, score_l
 
 
-
-
 class evaluate_word_pos_V:
     """
     判断字的垂直方向的高低位置,
@@ -1474,7 +1691,6 @@ class evaluate_word_pos_V:
         return dim_key_l,score_l
 
 
-
 class evaluate_word_pos_H:
     """
     判断字的水平方向的左右位置,
@@ -1514,7 +1730,6 @@ class evaluate_word_pos_H:
             # l.reviews_line.append('')
 
         return dim_key_l,score_l
-
 
 
 class evaluate_2parts_size_ratio_discrete:
@@ -1623,7 +1838,6 @@ class evaluate_2parts_size_ratio_discrete:
         return dim_key_l, score_l
 
 
-
 class evaluate_cross_p_V:
 
     """
@@ -1721,7 +1935,6 @@ class evaluate_cross_p_V:
 
         return dim_key_l, score_l
 
-
 class evaluate_cross_p_H:
 
     """
@@ -1818,6 +2031,271 @@ class evaluate_cross_p_H:
 
         return dim_key_l, score_l
 
+
+
+
+class evaluate_gap_mutual_V:
+    """
+    判断多个笔画的所有间距之间的垂直方向间距是否均等,不等
+
+    """
+
+    def __init__(self,p_gap_multi_d,p_Transed_l,eg_p_l,p_l):
+        self.p_gap_multi_d = p_gap_multi_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+
+    def calculate_dim(self):
+        
+        data = self.p_gap_multi_d
+        dim_key_l = []
+        dim_CN_l = []
+        score_list = []
+        for ele in data :
+
+            dim_key_l.append(ele[:1][0])
+            data_l = ele[1:-1]
+            dim_CN_l.append(ele[-1:][0])
+        
+        # data_list = []
+        # for i in data_list:
+            # data_list += i
+
+            y_l = []
+            # eg_y_l = []
+            for data in data_l:
+                point_y_l = [i[1] for i in data[0]]            
+                # eg_point_y_l = [i[1] for i in data[1]] 
+                mean_y = np.mean(point_y_l)
+                # eg_mean_y = np.mean(eg_point_y_l)
+                y_l.append(mean_y)
+                # eg_y_l.append(eg_mean_y)
+            
+            gap_l = [abs(y_l[i+1] - y_l[i]) for i in range(len(y_l)-1)]
+            # eg_gap_l = [abs(eg_y_l[i+1] - eg_y_l[i]) for i in range(len(eg_y_l)-1)]
+
+            gap_ratio_l = []
+            # eg_gap_ratio_l = []
+
+            for i in range(1,len(gap_l)):
+                # 所有的间距与第一个间距比值
+                gap_r = gap_l[i] / (gap_l[0]+epsilon)
+                # eg_gap_r = eg_gap_l[i] / (eg_gap_l[0]+epsilon)
+
+                gap_ratio_l.append(gap_r)
+                # eg_gap_ratio_l.append(eg_gap_r)
+
+            gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+            abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+            gap_dif_max = gap_ratio_l[abs_idx]
+            score_list.append(gap_dif_max)
+
+
+        # xx,yy=getXY([[0,0]])
+        # l.xs_line.append(xx)
+        # l.ys_line.append(yy)
+        # l.marks_line.append('b.')
+        # l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+        return dim_key_l,score_list
+
+class evaluate_gap_mutual_H:
+    """
+    判断多个笔画的所有间距之间的水平间距是否均等,不等
+
+    """
+
+    def __init__(self,p_gap_multi_d,p_Transed_l,eg_p_l,p_l):
+        self.p_gap_multi_d = p_gap_multi_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+
+    def calculate_dim(self):
+
+
+        # p_data_d = [['d1',1,2,3,4,'啊1'],
+                    # ['d2',1,2,3,4,'啊2']]
+        
+        data = self.p_gap_multi_d
+        dim_key_l = []
+        dim_CN_l = []
+        score_list = []
+        for ele in data :
+
+            dim_key_l.append(ele[:1][0])
+            data_l = ele[1:-1]
+            dim_CN_l.append(ele[-1:][0])
+        
+        # data_list = []
+        # for i in data_list:
+            # data_list += i
+
+            x_l = []
+            # eg_y_l = []
+            for data in data_l:
+                point_x_l = [i[0] for i in data[0]]            
+                # eg_point_x_l = [i[0] for i in data[1]] 
+                mean_x = np.mean(point_x_l)
+                # eg_mean_x = np.mean(eg_point_x_l)
+                x_l.append(mean_x)
+                # eg_x_l.append(eg_mean_x)
+            
+            gap_l = [abs(x_l[i+1] - x_l[i]) for i in range(len(x_l)-1)]
+            # eg_gap_l = [abs(eg_x_l[i+1] - eg_x_l[i]) for i in range(len(eg_x_l)-1)]
+
+            gap_ratio_l = []
+            # eg_gap_ratio_l = []
+
+            for i in range(1,len(gap_l)):
+                # 所有的间距与第一个间距比值
+                gap_r = gap_l[i] / (gap_l[0]+epsilon)
+                # eg_gap_r = eg_gap_l[i] / (eg_gap_l[0]+epsilon)
+
+                gap_ratio_l.append(gap_r)
+                # eg_gap_ratio_l.append(eg_gap_r)
+
+            gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+            abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+            gap_dif_max = gap_ratio_l[abs_idx]
+            score_list.append(gap_dif_max)
+
+
+        # xx,yy=getXY([[0,0]])
+        # l.xs_line.append(xx)
+        # l.ys_line.append(yy)
+        # l.marks_line.append('b.')
+        # l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+        return dim_key_l,score_list
+
+# check
+class evaluate_gap_individual_V:
+    """
+    判断两个笔画的垂直的间距是否过大，过小，较好
+    """
+
+    def __init__(self,p_gap_multi_d,p_Transed_l,eg_p_l,p_l):
+        self.p_gap_multi_d = p_gap_multi_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+
+    def calculate_dim(self):
+
+        dim_key_l = []
+        dim_CN_l = []
+        score_list = []
+        
+        data = self.p_gap_multi_d
+
+
+        
+        for ele in data :
+            dim_key_l.append(ele[:1][0])
+            data_l = ele[1:-1]
+            dim_CN_l.append(ele[-1:][0])
+
+            y_l = []
+            eg_y_l = []
+            for data in data_l:
+                point_y_l = [i[1] for i in data[0]]            
+                eg_point_y_l = [i[1] for i in data[1]] 
+                mean_y = np.mean(point_y_l)
+                eg_mean_y = np.mean(eg_point_y_l)
+                y_l.append(mean_y)
+                eg_y_l.append(eg_mean_y)
+            
+            gap_l = [abs(y_l[i+1] - y_l[i]) for i in range(len(y_l)-1)]
+            eg_gap_l = [abs(eg_y_l[i+1] - eg_y_l[i]) for i in range(len(eg_y_l)-1)]
+
+            gap_ratio_l = []
+
+            for i in range(len(gap_l)):
+
+                # 间距与对应的范字间距比值
+                gap_r = gap_l[i] / (eg_gap_l[i]+epsilon)
+                gap_ratio_l.append(gap_r)
+
+            gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+            abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+            gap_dif_max = gap_ratio_l[abs_idx]
+            score_list.append(gap_dif_max)
+
+
+            # xx,yy=getXY([[0,0]])
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append('b.')
+            # l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+        return dim_key_l,score_list
+
+class evaluate_gap_individual_H:
+    """
+    判断两个笔画的水平间距是否过大，过小，较好
+    """
+
+    def __init__(self,p_gap_multi_d,p_Transed_l,eg_p_l,p_l):
+        self.p_gap_multi_d = p_gap_multi_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+
+    def calculate_dim(self):
+
+        dim_key_l = []
+        dim_CN_l = []
+        score_list = []
+        
+        data = self.p_gap_multi_d
+
+
+        
+        for ele in data :
+            dim_key_l.append(ele[:1][0])
+            data_l = ele[1:-1]
+            dim_CN_l.append(ele[-1:][0])
+
+            x_l = []
+            eg_x_l = []
+            for data in data_l:
+                point_x_l = [i[0] for i in data[0]]            
+                eg_point_x_l = [i[0] for i in data[1]] 
+                mean_x = np.mean(point_x_l)
+                eg_mean_x = np.mean(eg_point_x_l)
+                x_l.append(mean_x)
+                eg_x_l.append(eg_mean_x)
+            
+            gap_l = [abs(x_l[i+1] - x_l[i]) for i in range(len(x_l)-1)]
+            eg_gap_l = [abs(eg_x_l[i+1] - eg_x_l[i]) for i in range(len(eg_x_l)-1)]
+
+            gap_ratio_l = []
+
+            for i in range(len(gap_l)):
+
+                #间距与对应的范字间距比值
+                gap_r = gap_l[i] / (eg_gap_l[i]+epsilon)
+                gap_ratio_l.append(gap_r)
+
+            gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+            abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+            gap_dif_max = gap_ratio_l[abs_idx]
+            score_list.append(gap_dif_max)
+
+
+            # xx,yy=getXY([[0,0]])
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append('b.')
+            # l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+        return dim_key_l,score_list
 
 
 
@@ -2881,6 +3359,8 @@ def evaluate_len_single_func(p_len_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
         v_eg_len_ = vec_len(v_eg)
 
         len_ratio = v_len_ / (v_eg_len_+epsilon)
+        if len_ratio<0.2:
+            len_ratio = 0        
         score_l.append(len_ratio)
 
         if vis_ornot :
@@ -2948,20 +3428,37 @@ def evaluate_slope_pp_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
     return dim_key_l,score_l
 
 
-def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
+
+
+
+
+
+
+
+def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """两条拟合的直线的夹角"""
-    dim_key_l,point_l_l1,point_l_l2,dim_CN_l = unload_data4(p_ang_d)
+
+
+
     score_l = []
+    dim_key_l = []
+    dim_CN_l = []
 
-    for idx, ele in enumerate(point_l_l1):
+    for data in p_ang_d:
 
-        line_1_point_l = ele[0] 
-        line_2_point_l = point_l_l2[idx][0]            
+        dim_key,point_l_l1,point_l_l2,dim_CN = unload_data4(data)
+
+        dim_key_l.append(dim_key[0])
+
+    # for idx, ele in enumerate(point_l_l1):
+
+        line_1_point_l = point_l_l1[0][0] 
+        line_2_point_l = point_l_l2[0][0]            
         k1,b1 = straight_line(line_1_point_l)
         k2,b2 = straight_line(line_2_point_l)
 
-        eg_line_1_point_l = ele[1] 
-        eg_line_2_point_l = point_l_l2[idx][1]            
+        eg_line_1_point_l = point_l_l1[0][1] 
+        eg_line_2_point_l = point_l_l2[0][1]            
         eg_k1,eg_b1 = straight_line(eg_line_1_point_l)
         eg_k2,eg_b2 = straight_line(eg_line_2_point_l)
 
@@ -2997,21 +3494,22 @@ def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
 
         ang_ratio = ang/eg_ang
 
+
         score_l.append(ang_ratio)
 
-        plt_line_1 = [[100,100*k1+b1],[400,400*k1+b1]]
-        plt_line_2 = [[100,100*k2+b2],[400,400*k2+b2]]
+        if vis_ornot:
+            plt_line_1 = [[100,100*k1+b1],[400,400*k1+b1]]
+            plt_line_2 = [[100,100*k2+b2],[400,400*k2+b2]]
 
-        eg_plt_line_1 = [[100,100*eg_k1+eg_b1],[400,400*eg_k1+eg_b1]]
-        eg_plt_line_2 = [[100,100*eg_k2+eg_b2],[400,400*eg_k2+eg_b2]]
+            eg_plt_line_1 = [[100,100*eg_k1+eg_b1],[400,400*eg_k1+eg_b1]]
+            eg_plt_line_2 = [[100,100*eg_k2+eg_b2],[400,400*eg_k2+eg_b2]]
 
-        if vis_ornot :
             xx,yy=getXY([p1,p2])
 
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx]+' 夹角比值: '+str(ang_ratio))
+            l.reviews_line.append(dim_CN[0]+' 夹角比值: '+str(ang_ratio))
 
             xx,yy=getXY([p2,p3])
 
@@ -3031,10 +3529,10 @@ def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('r-')
-            l.reviews_line.append('')            
-
+            l.reviews_line.append('')
 
     return dim_key_l,score_l
+
 
 
 def evaluate_gap_multi_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
@@ -3259,22 +3757,29 @@ def evaluate_symmetry_func(p_sym_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     return dim_key_l,score_l
 
 
-def evaluate_2parts_size_ratio_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
+
+def evaluate_2parts_size_ratio_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """
     判断字的两个组成部分的大小比例
     """
-    dim_key_l, points1_l_l, points2_l_l, dim_CN_l = unload_data4(p_data_d)
+
+    # self.p_data_d = [['dim1',load_data(),load_data(),'维度1']]
+
+    # dim_key_l, points1_l_l, points2_l_l, dim_CN_l = unload_data4(self.p_data_d)
 
     score_l = []
-    # dim_size_CN_l =[]
-    for idx,ele1 in enumerate(points1_l_l):
-        points1_l = ele1[0]
-        eg_points1_l = ele1[1]
-        # plot_point1_l = ele1[2]
+    dim_key_l = []
+    dim_CN_l = []
 
-        points2_l = points2_l_l[idx][0]
-        eg_points2_l = points2_l_l[idx][1]
-        # plot_point2_l = points2_l_l[idx][2]
+    for data in p_data_d:
+        dim_key, points1_l_l, points2_l_l, dim_CN = unload_data4(data)
+
+
+        points1_l = points1_l_l[0][0]
+        eg_points1_l = points1_l_l[0][1]
+        points2_l = points2_l_l[0][0]
+        eg_points2_l = points2_l_l[0][1]
+
 
         stroke_trains1 = nudged.estimate(eg_points1_l,points1_l)
         stroke_scale1 = stroke_trains1.get_scale()  
@@ -3284,13 +3789,20 @@ def evaluate_2parts_size_ratio_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
         scale_ratio = stroke_scale1/stroke_scale2 
 
         score_l.append(scale_ratio)
-
-        if vis_ornot :
-            xx,yy=getXY([[599,599]])
+        dim_key_l.append(dim_key[0])
+        if vis_ornot:
+            xx,yy = getXY(points1_l)
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b.')
-            l.reviews_line.append(dim_CN_l[idx]+' ２部分scale比率: '+("%.3f"%scale_ratio))
+            l.reviews_line.append(dim_CN[0]+'  两部分拟合到范字scale的比值: '+("%.3f"%scale_ratio))
+            
+            xx,yy = getXY(points2_l)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('g.')
+            l.reviews_line.append("")
+
 
     return dim_key_l,score_l
 
@@ -4046,11 +4558,425 @@ def evaluate_word_polygon_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
 
 
+def evaluate_word_shape_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
+    """
+        字的高与宽的比值shape_r与范字的高与宽的eg_shape_r的比
+    """
+
+    dim_key_l, point_l_l, dim_CN_l = unload_data3(p_data_d)
+
+    score_l = []
+
+    for idx, ele in enumerate(point_l_l):
+        
+        pos_min_x = np.min([i[0] for i in ele[0]])
+        pos_max_x = np.max([i[0] for i in ele[0]])
+        pos_min_y = np.min([i[1] for i in ele[0]])
+        pos_max_y = np.max([i[1] for i in ele[0]])
+
+        eg_pos_min_x = np.min([i[0] for i in ele[1]])
+        eg_pos_max_x = np.max([i[0] for i in ele[1]])
+        eg_pos_min_y = np.min([i[1] for i in ele[1]])
+        eg_pos_max_y = np.max([i[1] for i in ele[1]])
+
+        shape_r = (pos_max_y-pos_min_y) / (pos_max_x-pos_min_x+epsilon)
+        eg_shape_r = (eg_pos_max_y-eg_pos_min_y) / (eg_pos_max_x-eg_pos_min_x+epsilon)
+
+        shape_ratio = shape_r / eg_shape_r
+        score_l.append(shape_ratio)
+
+        if vis_ornot:
+            plt_p_list = [[pos_min_x,pos_min_y],[pos_max_x,pos_min_y],[pos_max_x,pos_max_y],[pos_min_x,pos_max_y],[pos_min_x,pos_min_y]]
+            eg_plt_p_list = [[eg_pos_min_x,eg_pos_min_y],[eg_pos_max_x,eg_pos_min_y],[eg_pos_max_x,eg_pos_max_y],[eg_pos_min_x,eg_pos_max_y],[eg_pos_min_x,eg_pos_min_y]]
+
+            xx,yy=getXY(plt_p_list)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append(color_l[idx])
+            l.reviews_line.append(dim_CN_l[idx]+' 高与宽的比值与范字的比值: '+("%.3f"%shape_ratio))
+
+            xx,yy=getXY(eg_plt_p_list)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('r-')
+            l.reviews_line.append('范字高与宽比值： '+("%.3f"%eg_shape_r))
+
+
+    return dim_key_l ,score_l
 
 
 
 
+def evaluate_gap_mutual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
+    """判断多个笔画的所有间距之间的垂直方向间距是否均等,不等"""
 
+    # p_data_d = [['d1',1,2,3,4,'啊1'],
+                # ['d2',1,2,3,4,'啊2']]
+    data = p_gap_multi_d
+    dim_key_l = []
+    dim_CN_l = []
+    score_list = []
+    for ele in data :
+
+        dim_key_l.append(ele[:1][0])
+        data_l = ele[1:-1]
+        dim_CN_l.append(ele[-1:][0])
+    
+    # data_list = []
+    # for i in data_list:
+        # data_list += i
+
+        y_l = []
+        # eg_y_l = []
+        for data in data_l:
+            point_y_l = [i[1] for i in data[0]]            
+            # eg_point_y_l = [i[1] for i in data[1]] 
+            mean_y = np.mean(point_y_l)
+            # eg_mean_y = np.mean(eg_point_y_l)
+            y_l.append(mean_y)
+            # eg_y_l.append(eg_mean_y)
+        
+        gap_l = [abs(y_l[i+1] - y_l[i]) for i in range(len(y_l)-1)]
+        # eg_gap_l = [abs(eg_y_l[i+1] - eg_y_l[i]) for i in range(len(eg_y_l)-1)]
+
+        gap_ratio_l = []
+        # eg_gap_ratio_l = []
+
+        for i in range(1,len(gap_l)):
+            # 所有的间距与第一个间距比值
+            gap_r = gap_l[i] / (gap_l[0]+epsilon)
+            # eg_gap_r = eg_gap_l[i] / (eg_gap_l[0]+epsilon)
+
+            gap_ratio_l.append(gap_r)
+            # eg_gap_ratio_l.append(eg_gap_r)
+
+        gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+        abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+        gap_dif_max = gap_ratio_l[abs_idx]
+        score_list.append(gap_dif_max)
+
+    if vis_ornot:
+        xx,yy=getXY([[0,0]])
+        l.xs_line.append(xx)
+        l.ys_line.append(yy)
+        l.marks_line.append('b.')
+        l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+    return dim_key_l,score_list
+
+def evaluate_gap_mutual_H_func():
+    """ 判断多个笔画的所有间距之间的水平间距是否均等,不等 """
+
+    # p_data_d = [['d1',1,2,3,4,'啊1'],
+                # ['d2',1,2,3,4,'啊2']]
+    
+    data = p_gap_multi_d
+    dim_key_l = []
+    dim_CN_l = []
+    score_list = []
+    for ele in data :
+
+        dim_key_l.append(ele[:1][0])
+        data_l = ele[1:-1]
+        dim_CN_l.append(ele[-1:][0])
+    
+    # data_list = []
+    # for i in data_list:
+        # data_list += i
+
+        x_l = []
+        # eg_y_l = []
+        for data in data_l:
+            point_x_l = [i[0] for i in data[0]]            
+            # eg_point_x_l = [i[0] for i in data[1]] 
+            mean_x = np.mean(point_x_l)
+            # eg_mean_x = np.mean(eg_point_x_l)
+            x_l.append(mean_x)
+            # eg_x_l.append(eg_mean_x)
+        
+        gap_l = [abs(x_l[i+1] - x_l[i]) for i in range(len(x_l)-1)]
+        # eg_gap_l = [abs(eg_x_l[i+1] - eg_x_l[i]) for i in range(len(eg_x_l)-1)]
+
+        gap_ratio_l = []
+        # eg_gap_ratio_l = []
+
+        for i in range(1,len(gap_l)):
+            # 所有的间距与第一个间距比值
+            gap_r = gap_l[i] / (gap_l[0]+epsilon)
+            # eg_gap_r = eg_gap_l[i] / (eg_gap_l[0]+epsilon)
+
+            gap_ratio_l.append(gap_r)
+            # eg_gap_ratio_l.append(eg_gap_r)
+
+        gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+        abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+        gap_dif_max = gap_ratio_l[abs_idx]
+        score_list.append(gap_dif_max)
+
+    if vis_ornot:
+        xx,yy=getXY([[0,0]])
+        l.xs_line.append(xx)
+        l.ys_line.append(yy)
+        l.marks_line.append('b.')
+        l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+    return dim_key_l,score_list
+
+# check
+def evaluate_gap_individual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
+    """
+    判断两个笔画的垂直的间距是否过大，过小，较好
+    """
+
+
+    dim_key_l = []
+    dim_CN_l = []
+    score_list = []
+    
+    data = p_gap_multi_d
+
+
+    
+    for ele in data :
+        dim_key_l.append(ele[:1][0])
+        data_l = ele[1:-1]
+        dim_CN_l.append(ele[-1:][0])
+
+        y_l = []
+        eg_y_l = []
+        for data in data_l:
+            point_y_l = [i[1] for i in data[0]]            
+            eg_point_y_l = [i[1] for i in data[1]] 
+            mean_y = np.mean(point_y_l)
+            eg_mean_y = np.mean(eg_point_y_l)
+            y_l.append(mean_y)
+            eg_y_l.append(eg_mean_y)
+        
+        gap_l = [abs(y_l[i+1] - y_l[i]) for i in range(len(y_l)-1)]
+        eg_gap_l = [abs(eg_y_l[i+1] - eg_y_l[i]) for i in range(len(eg_y_l)-1)]
+
+        gap_ratio_l = []
+
+        for i in range(len(gap_l)):
+
+            # 间距与对应的范字间距比值
+            gap_r = gap_l[i] / (eg_gap_l[i]+epsilon)
+            gap_ratio_l.append(gap_r)
+
+        gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+        abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+        gap_dif_max = gap_ratio_l[abs_idx]
+        score_list.append(gap_dif_max)
+
+        if vis_ornot:
+            xx,yy=getXY([[0,0]])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b.')
+            l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+    return dim_key_l,score_list
+
+def evaluate_gap_individual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
+    """
+    判断两个笔画的水平间距是否过大，过小，较好
+    """
+
+
+    dim_key_l = []
+    dim_CN_l = []
+    score_list = []
+    
+    data = p_gap_multi_d
+
+
+    
+    for ele in data :
+        dim_key_l.append(ele[:1][0])
+        data_l = ele[1:-1]
+        dim_CN_l.append(ele[-1:][0])
+
+        x_l = []
+        eg_x_l = []
+        for data in data_l:
+            point_x_l = [i[0] for i in data[0]]            
+            eg_point_x_l = [i[0] for i in data[1]] 
+            mean_x = np.mean(point_x_l)
+            eg_mean_x = np.mean(eg_point_x_l)
+            x_l.append(mean_x)
+            eg_x_l.append(eg_mean_x)
+        
+        gap_l = [abs(x_l[i+1] - x_l[i]) for i in range(len(x_l)-1)]
+        eg_gap_l = [abs(eg_x_l[i+1] - eg_x_l[i]) for i in range(len(eg_x_l)-1)]
+
+        gap_ratio_l = []
+
+        for i in range(len(gap_l)):
+
+            #间距与对应的范字间距比值
+            gap_r = gap_l[i] / (eg_gap_l[i]+epsilon)
+            gap_ratio_l.append(gap_r)
+
+        gap_r_abs = [np.abs(i-1) for i in gap_ratio_l]
+        abs_idx = gap_r_abs.index(np.max(gap_r_abs))
+        gap_dif_max = gap_ratio_l[abs_idx]
+        score_list.append(gap_dif_max)
+
+        if vis_ornot:
+            xx,yy=getXY([[0,0]])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b.')
+            l.reviews_line.append(dim_CN_l[0]+' gap比率: '+("%.3f"%gap_dif_max))
+
+
+    return dim_key_l,score_list
+
+
+
+
+def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
+    """[summary]
+    起收笔方向不准      min of two angle details from qi (begin) and shou (end) '
+    Returns:
+        score_l: 所有计算的角度的值构成的列表　，例：[100.11,50.233]
+    """
+    score_l = []
+    # dim_key_l, stroke1_p_l, stroke2_p_l, dim_CN_l = unload_data4(p_len_d)
+    dim_key_l, ll, dim_CN_l = unload_data_n(p_ang_d)
+    n = len(ll)
+    for j in range(1, n + 1):
+        exec("stroke{}_p_l=ll[{}]".format(j, j - 1))
+
+    for idx, ele in enumerate(locals()['stroke1_p_l']):
+
+        stroke1_points = ele[0]
+        eg_stroke1_points = ele[1]
+
+        p1 = stroke1_points[0]
+        p2 = stroke1_points[1]
+        p3 = stroke1_points[2]
+
+        eg_p1 = eg_stroke1_points[0]
+        eg_p2 = eg_stroke1_points[1]
+        eg_p3 = eg_stroke1_points[2]
+        plot_point_l = ele[2]
+
+
+        v2_1 = vec(p2, p1)
+
+        p_x = [(p1[0] + p3[0]) / 2, (p1[1] + p3[1]) / 2]
+        eg_p_x = [(eg_p1[0] + eg_p3[0]) / 2, (eg_p1[1] + eg_p3[1]) / 2]
+
+        v2_x = vec(p2, p_x)
+        v2_3 = vec(p2, p3)
+        ang1 = angle(v2_1, v2_x)
+        ang2 = angle(v2_x, v2_3)
+        ang = ang1 + ang2
+
+        eg_v2_1 = vec(eg_p2, eg_p1)
+        # eg_v2_x = vec(eg_p2,[(eg_p1[0]+eg_p2[0])/2,(eg_p1[1]+eg_p2[1])/2])
+        # eg_v2_x = vec(eg_p2,[eg_p1[0],eg_p2[1]])
+        eg_v2_x = vec(eg_p2, eg_p_x)
+
+        eg_v2_3 = vec(eg_p2, eg_p3)
+        eg_ang1 = angle(eg_v2_1, eg_v2_x)
+        eg_ang2 = angle(eg_v2_x, eg_v2_3)
+        eg_ang = eg_ang1 + eg_ang2
+
+        vec12 = vec(p1, p2)
+        vec23 = vec(p2, p3)
+        eg_vec12 = vec(eg_p1, eg_p2)
+        eg_vec23 = vec(eg_p2, eg_p3)
+
+        if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+            ang = 0
+
+        ang_ratio1 = ang / (eg_ang + epsilon)
+
+        if vis_ornot:
+            xx, yy = getXY([p1, p2, p3])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b-')
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
+
+            xx, yy = getXY([eg_p1, eg_p2, eg_p3])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('r-')
+            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
+
+        stroke2_points = locals()['stroke2_p_l'][idx][0]
+        eg_stroke2_points = locals()['stroke2_p_l'][idx][1]
+
+        p1 = stroke2_points[0]
+        p2 = stroke2_points[1]
+        p3 = stroke2_points[2]
+
+        eg_p1 = eg_stroke2_points[0]
+        eg_p2 = eg_stroke2_points[1]
+        eg_p3 = eg_stroke2_points[2]
+        plot_point_l = ele[2]
+
+
+        v2_1 = vec(p2, p1)
+
+        p_x = [(p1[0] + p3[0]) / 2, (p1[1] + p3[1]) / 2]
+        eg_p_x = [(eg_p1[0] + eg_p3[0]) / 2, (eg_p1[1] + eg_p3[1]) / 2]
+
+        v2_x = vec(p2, p_x)
+        v2_3 = vec(p2, p3)
+        ang1 = angle(v2_1, v2_x)
+        ang2 = angle(v2_x, v2_3)
+        ang = ang1 + ang2
+
+        eg_v2_1 = vec(eg_p2, eg_p1)
+        # eg_v2_x = vec(eg_p2,[(eg_p1[0]+eg_p2[0])/2,(eg_p1[1]+eg_p2[1])/2])
+        # eg_v2_x = vec(eg_p2,[eg_p1[0],eg_p2[1]])
+        eg_v2_x = vec(eg_p2, eg_p_x)
+
+        eg_v2_3 = vec(eg_p2, eg_p3)
+        eg_ang1 = angle(eg_v2_1, eg_v2_x)
+        eg_ang2 = angle(eg_v2_x, eg_v2_3)
+        eg_ang = eg_ang1 + eg_ang2
+
+        vec12 = vec(p1, p2)
+        vec23 = vec(p2, p3)
+        eg_vec12 = vec(eg_p1, eg_p2)
+        eg_vec23 = vec(eg_p2, eg_p3)
+
+        if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+            ang = 0
+
+        ang_ratio2 = ang / (eg_ang + epsilon)
+
+
+        score_l.append(min(ang_ratio1,ang_ratio2))
+
+        if vis_ornot:
+            xx, yy = getXY([p1, p2, p3])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b-')
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
+
+            xx, yy = getXY([eg_p1, eg_p2, eg_p3])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('r-')
+            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
+
+            xx, yy = getXY([p_x])
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b.')
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度比值: ' + str(score_l[-1]))
+
+    return dim_key_l, score_l
 
 
 

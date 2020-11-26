@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import seaborn as sns
 from dim_utils_v3_1 import *
+from shutil import copyfile
 matplotlib.use('Agg')
 # # # # # =======================================================================================================
 # def fs(dimnm,frpt,secpt,thirdpara,fourthpara,fifthpara,meaning):
@@ -126,8 +127,7 @@ def step0_getjs2csvpre(whichword):
             klst = list(temp[i].keys())
             klst.remove('serial_num'); klst.remove('name')
             for j in klst:
-                keyl = list(temp[i][j].keys())
-                keyl.remove('serial_num'); keyl.remove('name')
+                keyl = list(set(temp[i][j].keys())-set(['gif_file', 'gif_name', 'name', 'serial_num']))
                 for k in keyl:
                     tes.append([i+'__'+j+'__'+k,temp[i][j][k]['name'],temp[i][j]['name']])
         df = pd.read_csv(templatecsvnm,sep=',',header=None,index_col=None)    
@@ -245,7 +245,7 @@ def step0_getjs2csvpre(whichword):
             if '斜度过大' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_tx'
             # ----------------------------------------------------------------------------------------------------------
-            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] \
+            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] or '行笔方向不准' in df3.loc[idx,'meaning']\
                 or '顿笔方向不准' in df3.loc[idx,'meaning'] or '出钩方向不准' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'angle_3points'
                 df3.loc[idx,'whichrowpnb'] = 'ele'
@@ -327,12 +327,14 @@ def step1_findincompatiblejson(whichword):
         # print('-----------------------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
     else:
         print(unequallendf.loc[list(unequallendf.index),'jsflnm'])
+        # print(list(unequallendf.loc[list(unequallendf.index),'jsflnm']))
 
     # unequallendf.shape
     # print(res[res['len'] != egnm].shape)
     # print(res[res['len'] != egnm].shape)
     # print('----------------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
     return lcalpth2
+
 # # # # # =======================================================================================================
 ''' 读取 json内的点坐标数据  input json文件名 '''
 def read_points(filenm):
@@ -352,7 +354,7 @@ def getcsvinfo(whichword):
     filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.xlsx'
     df_1 = pd.read_excel(filenm,index_col=0,nrows=13,usecols=[0,1])
     dict_1 = df_1.to_dict()[df_1.columns[0]]
-    # df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)))
+    # df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)))
     df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
     df_2 = df_2[df_2['delete_or_not'] < 2]
 
