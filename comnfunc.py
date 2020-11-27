@@ -124,8 +124,9 @@ def step0_getjs2csvpre(whichword):
         lstkey.sort()
         for i in lstkey:
             # print('serial_num: %s   name: %s '%(temp[i]['serial_num'],temp[i]['name']))
-            klst = list(temp[i].keys())
-            klst.remove('serial_num'); klst.remove('name')
+            # klst = list(temp[i].keys())
+            klst = list(set(temp[i].keys())-set(['name', 'serial_num']))
+            # klst.remove('serial_num'); klst.remove('name')
             for j in klst:
                 keyl = list(set(temp[i][j].keys())-set(['gif_file', 'gif_name', 'name', 'serial_num']))
                 keyl.sort()
@@ -347,24 +348,29 @@ def read_points(filenm):
     return points_l
 # # # # # =======================================================================================================
 ''' 读取 人工编辑好的csv文件  input 汉字 '''
-def getcsvinfo(whichword):
+def getcsvinfo(whichword,is_save):
     df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
     df = df_cfg.set_index(['word'])
     # pd.read_excel(,)
     # filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.csv'
-    filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.xlsx'
-    df_1 = pd.read_excel(filenm,index_col=0,nrows=13,usecols=[0,1])
+    if is_save:
+        filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.csv'
+        df_1 = pd.read_csv(filenm,sep=',',index_col=0,nrows=13,usecols=[0,1])
+        df_2 = pd.read_csv(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
+    else:
+        filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.xlsx'
+        df_1 = pd.read_excel(filenm,index_col=0,nrows=13,usecols=[0,1])
+        # df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)))
+        df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
     dict_1 = df_1.to_dict()[df_1.columns[0]]
-    # df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)))
-    df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
     df_2 = df_2[df_2['delete_or_not'] < 2]
 
     return dict_1,df_2
 # # # # # =======================================================================================================
 ''' 生成word-read.json 文件;     生成word.json 文件 在results文件夹内  
     input 汉字  保存pinyin-read.json 、 pinyin.json  输出pinyin-read.json 路径'''
-def convcsv2jsrd(whichword):
-    temp,df2 = getcsvinfo(whichword)
+def convcsv2jsrd(whichword,is_save):
+    temp,df2 = getcsvinfo(whichword,is_save)
     # temp = df.to_dict()[df.columns[0]]
     res = {}
     res['word'] = temp['word']
@@ -549,8 +555,8 @@ def convcsv2jsrd(whichword):
     key 目前固定  ["CSV_PATH","DROPS","COLS_1","COLS_2","COLS_3","COLS_4","COLS_5","WTS_1","WTS_2","WTS_3",
                 "WTS_4","WTS_5","CONS_1","CONS_2","CONS_3","CONS_4","PROS_1","CURVES","DETAILS","NAMES_DICT"]        
     主要是给每一项key 赋值，决定value  .   可能需要修改    '''
-def genjsrules(whichword):
-    res,df2 = getcsvinfo(whichword)
+def genjsrules(whichword,is_save):
+    res,df2 = getcsvinfo(whichword,is_save)
     # res = df.to_dict()[df.columns[0]]
     res['json_para'] = res['json_para'].split(',')
     res['result_para'] = res['result_para'].split(',')
@@ -654,15 +660,15 @@ def fnd_maxmin(p_l_input):
     return x1,x2,y1,y2
 # # # # # =======================================================================================================
 def final_run_ver(whichworld,is_save):
-    con = convcsv2jsrd(whichworld)
-    genjsrules(whichworld)
+    con = convcsv2jsrd(whichworld,is_save)
+    genjsrules(whichworld,is_save)
     word = review_word(con,is_save)
     word.cal_score()
 # # # # # =======================================================================================================
 def figrename(whichword,nmb):
     fltoread = glob('./pre_csv/'+'*'+whichword+'*'+'.csv')
     if fltoread != []:
-        df = pd.read_csv(fltoread[0],sep=',',skiprows=20,header=0)
+        df = pd.read_csv(fltoread[0],sep=',',skiprows=24,header=0)
         df['dimensionname'] =  list(map(lambda x,y:x+'__'+y,list(df['dimensionname']),list(df['whichrowpnb'])))
         # dm = list(df['dimensionname'])[nmb]
         dm = list(df['dimensionname'])[2]
