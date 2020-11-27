@@ -128,6 +128,7 @@ def step0_getjs2csvpre(whichword):
             klst.remove('serial_num'); klst.remove('name')
             for j in klst:
                 keyl = list(set(temp[i][j].keys())-set(['gif_file', 'gif_name', 'name', 'serial_num']))
+                keyl.sort()
                 for k in keyl:
                     tes.append([i+'__'+j+'__'+k,temp[i][j][k]['name'],temp[i][j]['name']])
         df = pd.read_csv(templatecsvnm,sep=',',header=None,index_col=None)    
