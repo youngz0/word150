@@ -1335,6 +1335,69 @@ class evaluate_symmetry:
 #新加函数
 # # 多横平行关系
 
+class evaluate_middle:
+    """短横相对长横不居中"""
+    def __init__(self,p_slope_d, p_Transed_l, eg_p_l, p_l):
+        self.p_slope_d = p_slope_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+    
+    def calculate_dim(self):
+            
+
+
+        # print("evaluate_slope"+"*"*50)
+        #dim_key_l,point_l_l1,point_l_l2,dim_CN_l = unload_data4(p_slope_d)
+        dim_key_l, ll, dim_CN_l = unload_data_n(self.p_slope_d)
+        n = len(ll)
+
+        for j in range(1, n + 1):
+            exec("stroke{}_p_l=ll[{}]".format(j, j - 1))
+            # print("stroke{}_p_l=ll[{}]".format(j, j-1))
+        slope_dif_l = []
+        slope_l = []
+        score_l = []
+
+        for idx ,ele in enumerate(locals()['stroke1_p_l']):
+            point_list1 = ele[0]
+            eg_point_list1 = ele[1]
+            plot_point_l1 = ele[2]
+
+            point_list_2 = locals()['stroke2_p_l'][idx][0]
+            eg_point_list2 = locals()['stroke2_p_l'][idx][1]
+            plot_point_l2 = locals()['stroke2_p_l'][idx][2]
+
+            stroke1_x = [i[0] for i in point_list1]
+            stroke2_x = [i[0] for i in point_list_2]
+
+            e_stroke1_x = [i[0] for i in eg_point_list1]
+            e_stroke2_x = [i[0] for i in eg_point_list2]
+
+            middle_e = sum(e_stroke1_x)/sum(e_stroke2_x)
+            middle = sum(stroke1_x) / sum(stroke2_x)
+            score_l.append(middle/middle_e)
+
+            # if vis_ornot :
+            #     xx,yy=getXY(point_list1)
+            #     # print(xx, yy)
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append(color_l[idx])
+            #     l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+("%.3f"%middle/middle_e))
+
+            #     xx,yy=getXY(point_list_2)
+            #     # print(xx, yy)
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('r-')
+            #     l.reviews_line.append('')
+
+        return dim_key_l,score_l
+
+
+
+
 class evaluate_2angle_3points:
     
     """[summary]
@@ -4979,16 +5042,12 @@ def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
     return dim_key_l, score_l
 
 
+
+
+
 def evaluate_middle_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
-    """
-    判断笔画斜率太斜,斜率不准    相对值
-    计算 构成笔画的实际的点 拟合到范字相应的点 得到的旋转角度
+    """短横相对长横不居中"""
 
-    p_slope_d:    由维度和相应的点构成的字典样式的列表
-
-    Returns:
-        score_l: 所有计算的斜率的值构成的列表
-    """
     # print("evaluate_slope"+"*"*50)
     #dim_key_l,point_l_l1,point_l_l2,dim_CN_l = unload_data4(p_slope_d)
     dim_key_l, ll, dim_CN_l = unload_data_n(p_slope_d)
@@ -5036,6 +5095,8 @@ def evaluate_middle_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
             l.reviews_line.append('')
 
     return dim_key_l,score_l
+
+
 
 
 
