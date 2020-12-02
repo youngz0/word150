@@ -4728,7 +4728,7 @@ def evaluate_gap_mutual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
     return dim_key_l,score_list
 
-def evaluate_gap_mutual_H_func():
+def evaluate_gap_mutual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """ 判断多个笔画的所有间距之间的水平间距是否均等,不等 """
 
     # p_data_d = [['d1',1,2,3,4,'啊1'],
@@ -5085,12 +5085,13 @@ def evaluate_middle_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append(color_l[idx])
-            l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+("%.3f"%middle/middle_e))
+            l.reviews_line.append(dim_CN_l[idx]+' 居中程度: ' + "%.3f"%(middle/middle_e))
 
             xx,yy=getXY(point_list_2)
             # print(xx, yy)
             l.xs_line.append(xx)
             l.ys_line.append(yy)
+
             l.marks_line.append('r-')
             l.reviews_line.append('')
 
