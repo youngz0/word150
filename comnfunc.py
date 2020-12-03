@@ -16,6 +16,24 @@ from shutil import copyfile
 matplotlib.use('Agg')
 # # # # # =======================================================================================================
 # def fs(dimnm,frpt,secpt,thirdpara,fourthpara,fifthpara,meaning):
+'''把标注的json格式转成打分时需要的格式'''
+def cnvjsforscore(whichword):
+    df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
+    idex = list(df_cfg[df_cfg['word'] == whichword].index.values)[0]
+    whichwd = df_cfg.loc[idex,'pinyin']    
+    pth1 = os.path.join('./words_150/',whichwd,'ai_data/')
+    jssavepth = os.path.join('./words_150/',whichwd+'_givescore','convstrucjson')
+    if not os.path.exists(jssavepth):os.makedirs(jssavepth)
+    jsfllst = glob(pth1 + '*' + '.json')
+    if len(glob(jssavepth+'/'+'*'+'.json'))  != len(jsfllst):
+        for i in jsfllst:
+            te = {}
+            te['images'] = '2/2'
+            te['annotations'] = read_points(i)
+            te['results'] = [1]
+            with open(jssavepth+'/'+ os.path.split(i)[1] , 'w') as f:
+                json.dump(te, f,indent=4)    
+# # # # # =======================================================================================================
 def fs(frpt,secpt,thirdpara,fourthpara,fifthpara):
     # 输入的是list
     # # 'load_data('+','.join([frpt,secpt,thirdpara,fourthpara,fifthpara])+')'
@@ -126,6 +144,7 @@ def step0_getjs2csvpre(whichword):
             # print('serial_num: %s   name: %s '%(temp[i]['serial_num'],temp[i]['name']))
             # klst = list(temp[i].keys())
             klst = list(set(temp[i].keys())-set(['name', 'serial_num']))
+            klst.sort()
             # klst.remove('serial_num'); klst.remove('name')
             for j in klst:
                 keyl = list(set(temp[i][j].keys())-set(['gif_file', 'gif_name', 'name', 'serial_num']))
@@ -267,8 +286,17 @@ def step0_getjs2csvpre(whichword):
             if '左高右低（向下倾斜）' in df3.loc[idx,'meaning']  and '横' in df3.loc[idx,'stroke']:
                 df3.loc[idx,'funcname'] = 'slope_pp'
                 # df3.loc[idx,'whichrowpnb'] = 'positive'
-
-
+            # ----------------------------------------------------------------------------------------------------------
+            if '夹角太大' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'angle_2lines'
+                df3.loc[idx,'whichrowpnb'] = 'positive'
+            # ----------------------------------------------------------------------------------------------------------
+            if '夹角太大' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'angle_2lines'
+                df3.loc[idx,'whichrowpnb'] = 'negative'
+            # ----------------------------------------------------------------------------------------------------------
+            if '太长' in df3.loc[idx,'meaning'] and '太短' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = '2parts_size_ratio'
 
 
         # df3.sort_values(by='delete_or_not',ascending=True,inplace=True)
@@ -623,9 +651,13 @@ def genjsrules(whichword,is_save):
         #     continue
     
     NAMES_DICT_v = {}
+    GLOBALPOSITIVE_v = []
+    GLOBALNEGATIVE_v = []
     for i in list(df3['dimensionname']):
         # NAMES_DICT_v[i] = i.split('__')
         NAMES_DICT_v[i] = i.split('__')[:3]
+        if 'badlabs' not in i:
+            GLOBALPOSITIVE_v.append(i)
     NAMES_DICT_v['a1k1'] = list(grp_a1['dimensionname'].values)[0].split('__')
     NAMES_DICT_v['a1k2'] = list(grp_a1['dimensionname'].values)[1].split('__')
 
@@ -639,7 +671,7 @@ def genjsrules(whichword,is_save):
             locals()[res['result_para'][15]],\
             locals()[res['result_para'][16]],locals()[res['result_para'][17]],locals()[res['result_para'][18]],\
             locals()[res['result_para'][19]],                
-            CURVES_v,DETAILS_v,NAMES_DICT_v]))
+            CURVES_v,DETAILS_v,GLOBALPOSITIVE_v,GLOBALNEGATIVE_v,NAMES_DICT_v]))
     
     jsres_lcal = jsres.copy()
     jsres_lcal['CSV_PATH'] = csvpath_v_lcal
