@@ -7,11 +7,15 @@ df_1 = pd.read_csv('./prefilecfg/id_word_title.csv',index_col=0)
 df_2 = pd.read_csv('./prefilecfg/id_word_pinyin.csv',index_col=0)
 
 for i in df_2.index:
-    if pd.isna(df_1.loc[i,'word']):
-        df_1.loc[i,'word'] = df_2.loc[i,'汉字']
-        df_1.loc[i,'pinyin'] = df_2.loc[i,'字符']
-        df_1.loc[i,'flnm'] = str(i) +'__'+df_2.loc[i,'字符']
 
-        print('id: %s   汉字：%s   拼音：%s'%(i,df_2.loc[i,'汉字'],df_2.loc[i,'字符']))
+    try:
+        if pd.isna(df_1.loc[i,'word']):
+            df_1.loc[i,'word'] = df_2.loc[i,'汉字']
+            df_1.loc[i,'pinyin'] = df_2.loc[i,'字符']
+            df_1.loc[i,'flnm'] = str(i) +'__'+df_2.loc[i,'字符']
+            print('id: %s   汉字：%s   拼音：%s'%(i,df_2.loc[i,'汉字'],df_2.loc[i,'字符']))
+    except ValueError:
+        # print('汉字： {}'.format(df_1.loc[i,'word']))
+        print('1')
 
 df_1.to_csv('./prefilecfg/id_word_title.csv')

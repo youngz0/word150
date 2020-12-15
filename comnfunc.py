@@ -2,7 +2,6 @@
 import json,os
 import numpy as np
 import pandas as pd
-# import re
 from glob import glob
 from PIL import Image
 from pathlib import Path
@@ -13,10 +12,13 @@ from tqdm import tqdm
 import seaborn as sns
 from dim_utils_v3_1 import *
 from shutil import copyfile
+import scipy
 matplotlib.use('Agg')
+import matplotlib.mlab as mlab
+ 
 # # # # # =======================================================================================================
 # def fs(dimnm,frpt,secpt,thirdpara,fourthpara,fifthpara,meaning):
-'''把标注的json格式转成打分时需要的格式'''
+'''# 把标注的json格式转成打分时需要的格式'''
 def cnvjsforscore(whichword):
     df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
     idex = list(df_cfg[df_cfg['word'] == whichword].index.values)[0]
@@ -35,11 +37,12 @@ def cnvjsforscore(whichword):
                 json.dump(te, f,indent=4)    
 # # # # # =======================================================================================================
 def fs(frpt,secpt,thirdpara,fourthpara,fifthpara):
-    # 输入的是list
+    # 输入的是list   
     # # 'load_data('+','.join([frpt,secpt,thirdpara,fourthpara,fifthpara])+')'
     singleload_data = list(map(lambda f1,s1,t1,f2,f3:'load_data('+','.join([f1,s1,t1,f2,f3])+')', frpt,secpt,thirdpara,fourthpara,fifthpara))
     return ','.join(singleload_data)
 # # # # # =======================================================================================================
+'''# 处理xlsx表格中 根据first_point、second_point 不同的输入方式来写 如何load_data'''
 def firstsec_point(funcnm,tmdf):
     # if funcnm in ['cross_p_H','cross_p_V']:
     if ';' in list(tmdf['first_point'])[0]:
@@ -85,9 +88,8 @@ def firstsec_point(funcnm,tmdf):
             list(tmdf['dimensionname']),list(tmdf['first_point']),list(tmdf['second_point']),list(tmdf['thirdpara']),\
             list(tmdf['fourthpara']),list(tmdf['fifthpara']),list(tmdf['meaning']) ))) + ']' 
     return outres
-
 # # # # # =======================================================================================================
-'''读取json文件 input json文件名；   返回 json内的数据'''
+'''# 读取json文件 input json文件名；   返回 json内的数据'''
 def rdjson(flnm):
     js = open(flnm)
     # print(flnm)
@@ -120,7 +122,7 @@ def step2_show_point_singlwd(whichword):
             plt.savefig(os.path.join(save_path,'label_' + img_path.split('/')[-1].split('.')[0] + '.png'))
             plt.clf()
 # # # # # =======================================================================================================
-'''从200179读取相应json生成csv表格,默认删掉b开头的;  input 汉字； 保存文件在本地pre_csv；  返回生成的csv路径'''
+'''# 从200179读取相应json生成csv表格,默认删掉b开头的;  input 汉字； 保存文件在本地pre_csv；  返回生成的csv路径'''
 # def getjs2csvpre(whichword,*arg):
 def step0_getjs2csvpre(whichword):
     folderpath = './prefilecfg/200179/'
@@ -155,7 +157,6 @@ def step0_getjs2csvpre(whichword):
         colnm = pd.read_csv(templatecsvnm,sep=',',skiprows=24,nrows=0,header=0)
         wdpinyin = df_cfg.loc[idex,'pinyin']
         # wdpinyin = str(df_cfg.loc[idex,'idlenfour'])+'__'+df_cfg.loc[idex,'pinyin']
-
         # str(df_cfg.loc[idex,'idlenfour'])+'“'+df_cfg.loc[idex,'word']+'”字'
         # 'smbpath	/run/user/1000/gvfs/smb-share:server=192.168.60.181,share=share/sfq/word150/'
         df.loc[1,1] = whichword;  df.loc[2,1] = wdpinyin
@@ -298,20 +299,19 @@ def step0_getjs2csvpre(whichword):
             if '太长' in df3.loc[idx,'meaning'] and '太短' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = '2parts_size_ratio'
 
-
         # df3.sort_values(by='delete_or_not',ascending=True,inplace=True)
         # df3['sortordr'] = ''
         #     if '较好' in df3.loc[idx,'meaning'] and pras1 not in df3.loc[idx,'meaning']:
         #         df3.loc[idx,'delete_or_not'] = 1
         # df3 = df3[df3['delete_or_not'] !=1]
-        # print(list(df3.loc[:1,'meaning']))  # 打印前两行 都有 夸墨子较好 鼓励某字写好
+        # print(list(df3.loc[:1,'meaning']))  # 打印前两行 都有 夸某字较好 鼓励某字写好
         df3.to_csv(savepath,mode='a',index=False,header=False)
         print('汉字：%s  拼音: %s   生成路径: %s   读取的json: %s '%(whichword,wdpinyin,savepath,jsfllist[0]))
     # except IndexError:
     #     print('cant find relevant json')
     return savepath
 # # # # # =======================================================================================================
-''' 从远程smb  60.181 /sfq/word150 文件夹内copy 相应字的标注图片json、包括范字的 到本地words_150内，以字 的拼音为文件夹名
+'''# 从远程smb  60.181 /sfq/word150 文件夹内copy 相应字的标注图片json、包括范字的 到本地words_150内，以字 的拼音为文件夹名
     input 该字初步生成的csv，只读取前7行;  返回 本地 范字所属文件夹'''
 def step1_findincompatiblejson(whichword):
     # whichword  为 初步生成的csv文件路径，人工编辑之前的。  './pre_csv/ya_all_dimension.csv' 本函数只需要csv前7行内容
@@ -357,16 +357,9 @@ def step1_findincompatiblejson(whichword):
         # print('-----------------------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
     else:
         print(unequallendf.loc[list(unequallendf.index),'jsflnm'])
-        # print(list(unequallendf.loc[list(unequallendf.index),'jsflnm']))
-
-    # unequallendf.shape
-    # print(res[res['len'] != egnm].shape)
-    # print(res[res['len'] != egnm].shape)
-    # print('----------------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
     return lcalpth2
-
 # # # # # =======================================================================================================
-''' 读取 json内的点坐标数据  input json文件名 '''
+'''# 读取 json内的点坐标数据  input json文件名 '''
 def read_points(filenm):
     data = open(filenm); data = json.load(data)
     points_ = data['shapes']
@@ -375,13 +368,13 @@ def read_points(filenm):
         points_l.append(p['points'][0])
     return points_l
 # # # # # =======================================================================================================
-''' 读取 人工编辑好的csv文件  input 汉字 '''
+'''# 读取 人工编辑好的csv文件  input 汉字 '''
 def getcsvinfo(whichword,is_save):
     df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
     df = df_cfg.set_index(['word'])
     # pd.read_excel(,)
     # filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.csv'
-    if is_save:
+    if is_save == 1:
         filenm = './pre_csv/'+df.loc[whichword,'pinyin']+'.csv'
         df_1 = pd.read_csv(filenm,sep=',',index_col=0,nrows=13,usecols=[0,1])
         df_2 = pd.read_csv(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
@@ -395,11 +388,10 @@ def getcsvinfo(whichword,is_save):
 
     return dict_1,df_2
 # # # # # =======================================================================================================
-''' 生成word-read.json 文件;     生成word.json 文件 在results文件夹内  
+'''# 生成word-read.json 文件;     生成word.json 文件 在results文件夹内  
     input 汉字  保存pinyin-read.json 、 pinyin.json  输出pinyin-read.json 路径'''
 def convcsv2jsrd(whichword,is_save):
     temp,df2 = getcsvinfo(whichword,is_save)
-    # temp = df.to_dict()[df.columns[0]]
     res = {}
     res['word'] = temp['word']
     res['unvpath'] =  os.path.join(temp['folderpath'], temp['word'])
@@ -435,7 +427,8 @@ def convcsv2jsrd(whichword,is_save):
     dctk = list(map(lambda x:'evaluate_' + x + '_func' ,list(set(df2['funcname']))))
     
     res['vis_or_not'] = dict(zip(dctk, t))
-    df2 = df2.drop(columns=['vis_or_not', 'delete_or_not', 'whichrowpnb', 'COLS_NMB', 'CONS_ROWNMB','stroke'])
+    # df2 = df2.drop(columns=['vis_or_not', 'delete_or_not', 'whichrowpnb', 'COLS_NMB', 'CONS_ROWNMB','stroke'])
+    df2 = df2.drop(columns=['vis_or_not', 'delete_or_not', 'whichrowpnb', 'COLS_NMB', 'CONS_ROWNMB'])
     # df2 = df2.drop(columns=['vis_or_not', 'delete_or_not', 'whichrowpnb', 'CONS_ROWNMB','stroke'])
     df2['first_point'] = df2['first_point'].apply(str)
     df2['second_point'] = df2['second_point'].apply(str)
@@ -464,7 +457,7 @@ def convcsv2jsrd(whichword,is_save):
     with open(rd, 'w') as f:
         json.dump(res, f,indent=4)
     # =========================================================================================
-    """生成word.json""" 
+    '''生成word.json'''
     # # key: dim_l
     v_0 = ''.join(list(map(lambda x :"self." + x + " = []\n", res['evaluate_dim_l'])))
     # # key: eg_p_l
@@ -474,103 +467,20 @@ def convcsv2jsrd(whichword,is_save):
     v_2 = list(df2['dimensionname'])
     # # key: name_dict
     v_3 = {}
-    # for i in res['evaluate_dim_l']:
     for i in v_2:
-        # v_3[i] = i.split('__')
-        v_3[i] = i.split('__')[:3]
-    
+        v_3[i] = i.split('__')[:3]    
     # v_3[list(grp_a1['dimensionname'].values)[0]] = list(grp_a1['dimensionname'].values)[0].split('__')
     # v_3['bhpw'] = list(grp_a1['dimensionname'].values)[0].split('__')
     v_3['a1k1'] = list(grp_a1['dimensionname'].values)[0].split('__')
     v_3['a1k2'] = list(grp_a1['dimensionname'].values)[1].split('__')
-
     v_4 = {}
-    # =========================================================================================================================
-    # for k in list(set(df2['funcname'])):
-    #     if (k == 'evaluate_word_pos_func'):
-    #         v_4[k[:-5]] = "['"+list(te[k].keys())[0]+"'," + '[[x_1,y_1],[x_2,y_2]]' +",'"+ te[k][list(te[k].keys())[0]]['meaning']+"']"
-
-    #         print('pls wait')
-    #         # list(te[k].keys())[0] + ',[[x_1,y_1],[x_2,y_2]],' + te[k][list(te[k].keys())[0]]['meaning']
-    #         #  stroke_word_pos = [list(te[k].keys())[0], [[x_1,y_1],[x_2,y_2]], self.rule[k][list(self.rule[k].keys())[0]]['meaning']]
-             
-    #         #  stroke_word_pos = [list(self.rule[k].keys())[0], [[x_1,y_1],[x_2,y_2]], self.rule[k][list(self.rule[k].keys())[0]]['meaning']]
-
-    #     else:
-    #     # print(k)
-    #     # tmp[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  , keylist,bb,cc,dd,ee,ff,gg))) + ']'
-    #         tempdf = df2[df2['funcname'] == k]
-    #         v_4[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  ,\
-    #             list(tempdf['dimensionname']),list(tempdf['first_point']),list(tempdf['second_point']),list(tempdf['thirdpara']),\
-    #             list(tempdf['fourthpara']),list(tempdf['fifthpara']),list(tempdf['meaning']) ))) + ']'        
-    #     # var[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  ,\
-    #     #     list(df2[df2['funcname'] == k]['dimensionname']),list(df2[df2['funcname'] == k]['first_point']),list(df2[df2['funcname'] == k]['second_point']),\
-    #     #     list(df2[df2['funcname'] == k]['thirdpara']),list(df2[df2['funcname'] == k]['fourthpara']),list(df2[df2['funcname'] == k]['fifthpara']),\
-    #     #     list(df2[df2['funcname'] == k]['meaning']) ))) + ']'
-    # =========================================================================================================================
     print(list(set(df2['funcname'])))
     for k in list(set(df2['funcname'])):
-        # print(k)
-        # tmp[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  , keylist,bb,cc,dd,ee,ff,gg))) + ']'
         tempdf = df2[df2['funcname'] == k]
         fspnt = firstsec_point(k,tempdf)
         funcnmtransf = 'evaluate_'+k
         v_4[funcnmtransf] = fspnt
-
-        # =========================================================================================================================
-        # # print('------------------------------%s'%k)
-        # # print(tempdf['first_point'])
-        # if ',' in list(tempdf['first_point'])[0] and ';' not in list(tempdf['first_point'])[0]:
-        #     a1111 = []
-        #     for kkkk in tempdf.index:
-        #         # print(kkkk)
-        #         # print(k)
-        #         # print(tempdf)
-        #         # 暂时不想起名字
-        #         az = ','.join(list(map(lambda a2,b2,c2,d2,e2:"load_data(" + str(a2) + ',' + str(b2) + ','+c2+ ',' +d2+ ',' +e2+")",\
-        #             tempdf.loc[kkkk,'first_point'].split(','),tempdf.loc[kkkk,'second_point'].split(','),\
-        #                 [tempdf.loc[kkkk,'thirdpara']]*len(tempdf.loc[kkkk,'first_point'].split(',')),\
-        #                 [tempdf.loc[kkkk,'fourthpara']]*len(tempdf.loc[kkkk,'first_point'].split(',')),\
-        #                 [tempdf.loc[kkkk,'fifthpara']]*len(tempdf.loc[kkkk,'first_point'].split(',')))))
-        #         b1111 = "['"+tempdf.loc[kkkk,'dimensionname']+"',"+az+",'"+tempdf.loc[kkkk,'meaning']+"']"
-        #         a1111.append(b1111)
-        #     funcnmtransf = 'evaluate_'+k
-        #     v_4[funcnmtransf] = '['+','.join(a1111)+']'
-        # elif ';' in list(tempdf['first_point'])[0]:
-        #     # ---------------------------------------------------------------------------------------------------------
-        #     firstsec_point(k,tempdf)
-        #     # list(tempdf['first_point'])[0]
-        #     # list(tempdf['first_point'])[0].split(';')
-
-
-
-
-
-
-
-
-
-
-
-
-
-        #     # ---------------------------------------------------------------------------------------------------------
-        #     print(1)
-
-
-
-
-        # else:
-        #     # print('***************************%s'%k)
-        #     # print(2)
-        #     funcnmtransf = 'evaluate_'+k
-        #     v_4[funcnmtransf] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(int(float(b1))) + ',' + str(int(float(c1))) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  ,\
-        #         list(tempdf['dimensionname']),list(tempdf['first_point']),list(tempdf['second_point']),list(tempdf['thirdpara']),\
-        #         list(tempdf['fourthpara']),list(tempdf['fifthpara']),list(tempdf['meaning']) ))) + ']' 
-        #     # var[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  ,\
-        #     #     list(df2[df2['funcname'] == k]['dimensionname']),list(df2[df2['funcname'] == k]['first_point']),list(df2[df2['funcname'] == k]['second_point']),\
-        #     #     list(df2[df2['funcname'] == k]['thirdpara']),list(df2[df2['funcname'] == k]['fourthpara']),list(df2[df2['funcname'] == k]['fifthpara']),\
-        #     #     list(df2[df2['funcname'] == k]['meaning']) ))) + ']'
+    
     preprocess_data_v = ''
     tes = dict(zip(res['json_para'],[v_0,v_1,v_2,v_3,v_4,preprocess_data_v]))
     with open(res['results'] + '/'+ res['word'] + '.json', 'w') as f:
@@ -581,7 +491,7 @@ def convcsv2jsrd(whichword,is_save):
 # # # # # =======================================================================================================
 ''' 生成pinyin_rules.json 文件   以 丫、一 为例 生成 ya_rules.json   yi_rules.json
     key 目前固定  ["CSV_PATH","DROPS","COLS_1","COLS_2","COLS_3","COLS_4","COLS_5","WTS_1","WTS_2","WTS_3",
-                "WTS_4","WTS_5","CONS_1","CONS_2","CONS_3","CONS_4","PROS_1","CURVES","DETAILS","NAMES_DICT"]        
+                "WTS_4","WTS_5","CONS_1","CONS_2","CONS_3","CONS_4","PROS_1","CURVES","DETAILS","GLOBALPOSITIVE","GLOBALNEGATIVE","NAMES_DICT"]
     主要是给每一项key 赋值，决定value  .   可能需要修改    '''
 def genjsrules(whichword,is_save):
     res,df2 = getcsvinfo(whichword,is_save)
@@ -612,16 +522,14 @@ def genjsrules(whichword,is_save):
     # locals()['COLS_5'] = ['bhpw']#+locals()['COLS_5']
     # locals()['WTS_5'] = [1]*len(locals()['COLS_5'])
     # # ==================================================================================================================
-    
     for i in range(1,5,1):
         a = df3[df3['COLS_NMB'] == i]
         exec('CONS_{} = {}'.format(i, list(a[a['CONS_ROWNMB'] != 1]['dimensionname'].values)))
-
+    
     for i in range(1,5,1):
         # print(i)
         a = df3[df3['COLS_NMB'] == i ]
         exec('PROS_{} = {}'.format(i, list(a[a['CONS_ROWNMB'] == 1]['dimensionname'].values)))
-
 
         # exec('CONS_{} = {}'.format(i, list(df3[df3['COLS_NMB'] == i]['dimensionname'].values)))
         # exec('WTS_{} = {}'.format(i, [1]*len(locals()['COLS_{}'.format(i)]) ))
@@ -637,24 +545,18 @@ def genjsrules(whichword,is_save):
     DETAILS_v = []
     CURVES_v = []
     for i in list(set(df3['funcname'])):
-        # print(i)
         if 'curve' in i  or 'slope' in i:
             # print('----------- %s'%i)
             CURVES_v = CURVES_v + list(df3[df3['funcname'] == i]['dimensionname'])
             # CURVES_v = list(df3[df3['funcname'] == i]['dimensionname'])
-        # else:
-        #     continue
         if 'len' in i and 'single' not in i:
             # print('=================  %s'%i)
             DETAILS_v = DETAILS_v + list(df3[df3['funcname'] == i]['dimensionname'])
-        # else:
-        #     continue
     
     NAMES_DICT_v = {}
     GLOBALPOSITIVE_v = []
     GLOBALNEGATIVE_v = []
     for i in list(df3['dimensionname']):
-        # NAMES_DICT_v[i] = i.split('__')
         NAMES_DICT_v[i] = i.split('__')[:3]
         if 'badlabs' not in i:
             GLOBALPOSITIVE_v.append(i)
@@ -672,13 +574,12 @@ def genjsrules(whichword,is_save):
             locals()[res['result_para'][16]],locals()[res['result_para'][17]],locals()[res['result_para'][18]],\
             locals()[res['result_para'][19]],                
             CURVES_v,DETAILS_v,GLOBALPOSITIVE_v,GLOBALNEGATIVE_v,NAMES_DICT_v]))
-    
-    jsres_lcal = jsres.copy()
+    jsres_lcal = jsres.copy() 
     jsres_lcal['CSV_PATH'] = csvpath_v_lcal
-
 
     outp = os.path.join(res['folderpath'],res['word'],res['jsresults'],res['word'] + '_rules.json')
     print('word_rules.json save path : %s'%outp)
+    '''# 生成两份结果一份存在 A_results里面只包含要提交的文件，且pinyin_rules.json中CSV_PATH路径是提交后会用到的，另一份CSV_PATH路径是Step4需要用到'''
     with open(outp, 'w') as f:
         json.dump(jsres_lcal, f,indent=4)
     with open(res['finalrespath'] + '/'+ res['word'] + '_rules.json', 'w') as f:
@@ -695,7 +596,14 @@ def final_run_ver(whichworld,is_save):
     con = convcsv2jsrd(whichworld,is_save)
     genjsrules(whichworld,is_save)
     word = review_word(con,is_save)
-    word.cal_score()
+    # word.cal_score()
+    new_whichrowpnb = word.cal_score()
+    res,df = getcsvinfo(whichworld,is_save)
+    new_whichrowpnb = list(df['whichrowpnb'])[:2] + new_whichrowpnb
+
+    # print(new_whichrowpnb)
+    # 学习怎么存xlsx
+    print(1)
 # # # # # =======================================================================================================
 def figrename(whichword,nmb):
     fltoread = glob('./pre_csv/'+'*'+whichword+'*'+'.csv')
@@ -735,9 +643,7 @@ def figrename(whichword,nmb):
 # # # # 1、计算，生成csv
 # # # # 2、根据规则生成json/yaml 文件
 class review_word():
-
     def __init__(self,jsonfl,is_save):
-       
         js = open(jsonfl)
         data = json.load(js)                          # # 读取json文件， 以下7行分别是
         self.word = data['word']                      # # 某个字
@@ -865,7 +771,7 @@ class review_word():
             """
             主要分为三类。
             类一：夸奖。 调用  evaluate_word_pos_func ，输入为 四个最大最小值。
-            比较固定，先单列
+            比较固定，先单列     （已经修改了evaluate_word_pos 的输入方式，合并在类三里）
             """
             # x_1,x_2,y_1,y_2 = fnd_maxmin(p_l)
             # stroke_word_pos = ['praise__nxgzzj',[[x_1,y_1],[x_2,y_2]],'夸奖_1.能写格子中间']            
@@ -944,110 +850,13 @@ class review_word():
                 else:
                     print('new type !')
 
-                # print('------------------------------------------------------------------------------------------  %s'%k)
-                # # if (k == 'evaluate_word_pos_func'):
-                # #     print('pls wait')
-                # #     """
-                # #     主要分为三类。
-                # #     类一：夸奖。 调用  evaluate_word_pos_func ，输入为 四个最大最小值。
-                # #     比较固定，先单列
-                # #     """
-                # #     vis_or_not = int(self.visornot[k])
-                # #     x_1,x_2,y_1,y_2 = fnd_maxmin(p_l)
-                # #     stroke_word_pos = [list(self.rule[k].keys())[0], [[x_1,y_1],[x_2,y_2]], self.rule[k][list(self.rule[k].keys())[0]]['meaning']]
-                # #     # stroke_word_pos = ['praise__nxgzzj',[[x_1,y_1],[x_2,y_2]],'夸奖_1.能写格子中间']            
-                # #     self.ldvalue(self.word,  evaluate_word_pos_func,  stroke_word_pos,vis_or_not)                    
-                # # else:
-                # vis_or_not = int(self.visornot[k])
-                # keylist = list(self.rule[k].keys())
-                # i = keylist[0]
-                # # print(self.rule[k][i]['first_point'])
-                # # print(i)0
-                # if ',' not in self.rule[k][i]['first_point']:
-                #     res_cal = [i,\
-                #             eval("load_data")(
-                #                 int(self.rule[k][i]['first_point']),\
-                #                 int(self.rule[k][i]['second_point']),\
-                #                 eval(self.rule[k][i]['thirdpara']),\
-                #                 eval(self.rule[k][i]['fourthpara']),\
-                #                 eval(self.rule[k][i]['fifthpara'])),\
-                #             self.rule[k][i]['meaning']]
-                #     # print('jsonname:  %s  meaning:  %s    函数： %s'%(js_name,self.rule[k][i]['meaning'],k))
-
-                #     if (len(self.rule[k]) > 1):
-                #         for i in keylist[1:]:
-                #             # print(i)
-                #             tmp = [i,\
-                #                     eval("load_data")(
-                #                         int(self.rule[k][i]['first_point']),\
-                #                         int(self.rule[k][i]['second_point']),\
-                #                         eval(self.rule[k][i]['thirdpara']),\
-                #                         eval(self.rule[k][i]['fourthpara']),\
-                #                         eval(self.rule[k][i]['fifthpara'])),\
-                #                         self.rule[k][i]['meaning']]
-                #             res_cal = res_cal + tmp
-                # # else:
-                # #     res_cal = [i, \
-                # #                eval("load_data")(
-                # #                    int(self.rule[k][i]['first_point'].split(',')[0]), \
-                # #                    int(self.rule[k][i]['second_point'].split(',')[0]), \
-                # #                    eval(self.rule[k][i]['thirdpara']), \
-                # #                    eval(self.rule[k][i]['fourthpara']), \
-                # #                    eval(self.rule[k][i]['fifthpara'])), \
-                # #                eval("load_data")(
-                # #                    int(self.rule[k][i]['first_point'].split(',')[1]), \
-                # #                    int(self.rule[k][i]['second_point'].split(',')[1]), \
-                # #                    eval(self.rule[k][i]['thirdpara']), \
-                # #                    eval(self.rule[k][i]['fourthpara']), \
-                # #                    eval(self.rule[k][i]['fifthpara'])), \
-                # #                self.rule[k][i]['meaning']]
-                # #     # print('jsonname:  %s  meaning:  %s    函数： %s'%(js_name,self.rule[k][i]['meaning'],k))
-                # #
-                # #     if (len(self.rule[k]) > 1):
-                # #         for i in keylist[1:]:
-                # #             # print(i)
-                # #             tmp = [i, \
-                # #                    eval("load_data")(
-                # #                        int(self.rule[k][i]['first_point'].split(',')[0]), \
-                # #                        int(self.rule[k][i]['second_point'].split(',')[0]), \
-                # #                        eval(self.rule[k][i]['thirdpara']), \
-                # #                        eval(self.rule[k][i]['fourthpara']), \
-                # #                        eval(self.rule[k][i]['fifthpara'])), \
-                # #                    eval("load_data")(
-                # #                        int(self.rule[k][i]['first_point'].split(',')[1]), \
-                # #                        int(self.rule[k][i]['second_point'].split(',')[1]), \
-                # #                        eval(self.rule[k][i]['thirdpara']), \
-                # #                        eval(self.rule[k][i]['fourthpara']), \
-                # #                        eval(self.rule[k][i]['fifthpara'])), \
-                # #                    self.rule[k][i]['meaning']]
-                # #             res_cal = res_cal + tmp
-                # else:
-                #     # fsinreadjs(k,self.rule[k])
-                #     res_cal = []
-
-                #     # print('keylist',keylist)
-                #     for i in keylist[0:]:
-                #         n = len(self.rule[k][i]['first_point'].split(','))
-
-                #         tmp = [i]
-                #         for j in range(n):
-                #             tmp = tmp + [eval("load_data")(
-                #                 int(self.rule[k][i]['first_point'].split(',')[j]), \
-                #                 int(self.rule[k][i]['second_point'].split(',')[j]), \
-                #                 eval(self.rule[k][i]['thirdpara']), \
-                #                 eval(self.rule[k][i]['fourthpara']), \
-                #                 eval(self.rule[k][i]['fifthpara'])), \
-                #                 ]
-                #         # print(tmp + [self.rule[k][i]['meaning']])
-                #         res_cal.append(tmp + [self.rule[k][i]['meaning']])
-                    # print(1)
                 self.ldvalue(self.word,eval(k),res_cal,vis_or_not)
             # print('learning---------pls wait')
-            # self.is_save 考虑用vis_or_not 替代
+            # # self.is_save 
             if self.is_save == True:
                 display(self.data_path,pic_name,self.save_path,self.is_save,p_l,eg_p_l)
                 clearHis()
-
+    
     def cal_score(self):
         def sort_dict_key(dict_): 
             # print('delete')
@@ -1064,68 +873,77 @@ class review_word():
         self.score_dict  = sort_dict_key(self.score_dict)
         dim_score_df = pd.DataFrame(self.score_dict)
         # print('dim_score_df: {}'.format(dim_score_df))
-        print('dim_score_df.head(): {} dim_score_df.shape: {} '.format(dim_score_df.head(),dim_score_df.shape))
+        # print('dim_score_df.head(): {}    dim_score_df.shape: {} '.format(dim_score_df.head(),dim_score_df.shape))
         # dim_score_df.to_csv(self.csv_savepath + self.csvname + '.csv')
         dim_score_df.to_csv(self.unvpath + self.csvname + '.csv')
         # =================================================================
-        ## 本段是为了生成均值方差的csv文件  有时间再改
-        df2 = dim_score_df.copy()        
+        df2 = dim_score_df.copy()
+        df_chinese = pd.DataFrame(columns=dim_score_df.columns)
         for ki in self.rule.keys():
-            keylist2 = list(self.rule[ki].keys());   
-            # keylist2.remove('vis_or_not')
+            keylist2 = list(self.rule[ki].keys());
             for t in keylist2:
-                df2.loc[len(dim_score_df),t] = self.rule[ki][t]['meaning']
-        # df2.to_csv(self.csv_savepath + self.csvname + '_ch.csv')
-        df2.to_csv(self.unvpath + self.csvname + '_chinese.csv')
-        
+                df_chinese.loc[0,t] = self.rule[ki][t]['stroke']+self.rule[ki][t]['meaning']
+                # df2.loc[len(dim_score_df),t] = self.rule[ki][t]['stroke']+self.rule[ki][t]['meaning']
+        df_chinese.to_csv(self.unvpath + self.csvname + '_chinese.csv')#,header = None)
+        df2.to_csv(self.unvpath + self.csvname + '_chinese.csv',mode='a',header = None)
+        # =================================================================        
+        ## 本段是为了生成均值方差的csv文件  有时间再改
         df = dim_score_df.copy()
+        # df = pd.read_csv(self.unvpath + 'df_copy' + '-.csv',sep=',',index_col=0)
         # df3 = pd.DataFrame(columns = df.columns[3:],index = ['mean','std'])
         df3 = pd.DataFrame(index = ['mean','std'])
-    
+        whichpnb_new = []
         for j in df.columns[1:]:
-            # print(j)
             # fig, axs = plt.subplots(ncols=2)
-            data_columns = df[j]
+            if df[df[j] == 0].shape[0]/len(df) > 0.05:
+                # j.split('__')[:-1]+list(set(j.split('__')[-1].split("_"))-set(['zero']))+list(['zero'])
+                j_new = j.split('__')[-1] if 'zero' in j else j.split('__')[-1]+'_zero'
+                print('{}:  {} 个计算结果值为0，总数 {}'.format(df_chinese.loc[0,j],df[df[j] == 0].shape[0],len(df)))
+                data_columns = df[df[j] != 0][j]
+                data_columns_n = df[df[j] != 0][j].tolist()
+            else:
+                j_new = j.split('__')[-1][:-5] if 'zero' in j else j.split('__')[-1]
+                if 'zero' in j.split('__')[-1]:
+                    print('0占比很小，但{}中有zero'.format(j))
+                # j = '__'.join(j.split('__')[:-1]+j.split('__')[-1].split("_"))
+                data_columns = df[j]
+                data_columns_n = df[j].tolist()
+            whichpnb_new.append(j_new)
+            # print('len(data_columns_n): {}'.format(len(data_columns_n)))
+            # data_columns = df[j]
+            # data_columns_n = df[j].tolist()
+            # data_columns = df[j]
             # sns.distplot(data_columns, ax=axs[0])
-            data_columns_n = df[j].tolist()
             data_zscore = (data_columns_n - np.asarray(data_columns_n).mean())/np.asarray(data_columns_n).std()
             # print('mean: ',np.asarray(data_columns_n).mean())
             # print('std: ',np.asarray(data_columns_n).std())
             df3.loc['mean',j] = np.asarray(data_columns_n).mean()
             df3.loc['std',j] = np.asarray(data_columns_n).std()
+            # df3.to_csv(self.csv_savepath + self.meanstdcsvname + '.csv')
+            # df3.to_csv(self.finalrespath +'/'+ self.meanstdcsvname + '.csv')
+            # 画图  暂时不画  save_flag > 1 可以改为别的判断
+            if self.is_save > 1:
+                # sns.distplot(data_zscore)
+                sns.distplot(data_zscore,kde=True )
+                # sns.distplot(data_zscore,hist=False,kde=True)
+                # plt.hist(data_zscore,bins = 100,normed=True)
+                if j == 'praise__nxgzzj':
+                    figname=j
+                else:
+                    figname = df_chinese.loc[0,j] + '_' +j.split('_')[-1]# + '_'  + j.split('_')[8]
+                    # print(figname)
+                try:
+                    plt.savefig(self.figpath+figname, format='png', dpi=600, pad_inches = 0)
+                except FileNotFoundError:
+                    plt.savefig(self.figpath+figname.replace('/',''), format='png', dpi=600, pad_inches = 0)
+                plt.clf()
+            # print('normaltest data_columns_n :{}'.format(scipy.stats.normaltest(data_columns_n)))
+            # print('normaltest data_zscore    :{}'.format(scipy.stats.normaltest(data_zscore)))
+            # print('-------- testing ----------------------------------------------------- {}'.format(figname))
+            # res,df2 = getcsvinfo(whichword,is_save)
             df3.to_csv(self.csv_savepath + self.meanstdcsvname + '.csv')
             df3.to_csv(self.finalrespath +'/'+ self.meanstdcsvname + '.csv')
-            # # 画图  暂时不画
-            # sns.distplot(data_zscore)
-            # if j == 'praise__nxgzzj':
-            #     figname=j
-            # else:
-            #     figname = df2.loc[len(dim_score_df),j] + '_' +j.split('_')[-1] + '_'  + j.split('_')[1] + '_'  + j.split('_')[0]
-            # plt.savefig(self.figpath+figname, format='png', dpi=600, pad_inches = 0)
-            # # plt.savefig(self.csv_savepath+'fig_png/'+figname, format='png', dpi=600, pad_inches = 0)
-            # # plt.show()
-            # plt.clf()
-            # # print(1)
         # =================================================================
         print('done')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return whichpnb_new
 
