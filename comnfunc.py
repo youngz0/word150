@@ -6,23 +6,28 @@ from glob import glob
 from PIL import Image
 from pathlib import Path
 import nudged
-import matplotlib
+# import matplotlib
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import seaborn as sns
 from dim_utils_v3_1 import *
 from shutil import copyfile
 import scipy
-matplotlib.use('Agg')
-import matplotlib.mlab as mlab
- 
+import cv2
+# matplotlib.use('Agg')
+import matplotlib as mpl
+mpl.use('Agg')
+# import matplotlib.mlab as mlab
+zhfont = mpl.font_manager.FontProperties(fname = '/usr/share/fonts/truetype/arphic-gkai00mp/gkai00mp.ttf')
+
+# # # # # =======================================================================================================
 # # # # # =======================================================================================================
 # def fs(dimnm,frpt,secpt,thirdpara,fourthpara,fifthpara,meaning):
 '''# 把标注的json格式转成打分时需要的格式'''
 def cnvjsforscore(whichword):
     df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
     idex = list(df_cfg[df_cfg['word'] == whichword].index.values)[0]
-    whichwd = df_cfg.loc[idex,'pinyin']    
+    whichwd = df_cfg.loc[idex,'pinyin']
     pth1 = os.path.join('./words_150/',whichwd,'ai_data/')
     jssavepth = os.path.join('./words_150/',whichwd+'_givescore','convstrucjson')
     if not os.path.exists(jssavepth):os.makedirs(jssavepth)
@@ -34,7 +39,7 @@ def cnvjsforscore(whichword):
             te['annotations'] = read_points(i)
             te['results'] = [1]
             with open(jssavepth+'/'+ os.path.split(i)[1] , 'w') as f:
-                json.dump(te, f,indent=4)    
+                json.dump(te, f,indent=4)
 # # # # # =======================================================================================================
 def fs(frpt,secpt,thirdpara,fourthpara,fifthpara):
     # 输入的是list   
@@ -63,7 +68,6 @@ def firstsec_point(funcnm,tmdf):
     elif ',' in list(tmdf['first_point'])[0] and ';' not in list(tmdf['first_point'])[0]:
         a1111 = []
         for kkkk in tmdf.index:
-            # print(tempdf)
             # 暂时不想起名字
             az = ','.join(list(map(lambda a2,b2,c2,d2,e2:"load_data(" + str(a2) + ',' + str(b2) + ','+c2+ ',' +d2+ ',' +e2+")",\
                 tmdf.loc[kkkk,'first_point'].split(','),tmdf.loc[kkkk,'second_point'].split(','),\
@@ -117,7 +121,8 @@ def step2_show_point_singlwd(whichword):
             for idx,c in enumerate(coord):
                 plt.plot(c[0],c[1],'r.')
                 # plt.plot(c[0],c[1],color_list[idx])
-                plt.text(c[0],c[1],str(idx+1))
+                plt.text(c[0],c[1],str(idx+1),fontsize= 8 ,weight = "light",color='black')
+
             # plt.show()        
             plt.savefig(os.path.join(save_path,'label_' + img_path.split('/')[-1].split('.')[0] + '.png'))
             plt.clf()
@@ -179,7 +184,8 @@ def step0_getjs2csvpre(whichword):
         df3.loc[dntkindex:,'delete_or_not'] = [9]*len(df3.loc[dntkindex:,'delete_or_not'])
         for idx in df3.index:
             # ----------------------------------------------------------------------------------------------------------
-            '''## 先这么写有时间 改为 用字典的'''
+            '''## 先这么写有时间 改为 用字典的  // 可能规律找的不准，最后生成的表格不一定完全准确'''
+            # startwith
             if 'a2' == df3.loc[idx,'dimensionname'][:2]:
                 df3.loc[idx,'COLS_NMB'] = 1
             if 'a3' == df3.loc[idx,'dimensionname'][:2]:
@@ -189,13 +195,17 @@ def step0_getjs2csvpre(whichword):
             if 'a5' == df3.loc[idx,'dimensionname'][:2]:
                 df3.loc[idx,'COLS_NMB'] = 4
             # ----------------------------------------------------------------------------------------------------------                
-            if  '斜点太圆' in df3.loc[idx,'meaning'] or '字写得太靠' in df3.loc[idx,'meaning'] or '太重' in df3.loc[idx,'meaning']\
-                or '出锋' in df3.loc[idx,'meaning'] or '颤笔' in df3.loc[idx,'meaning'] or '收笔顿笔回勾' in df3.loc[idx,'meaning']\
-                or '收笔顿笔回钩' in df3.loc[idx,'meaning']:
+            if  '斜点太圆' in df3.loc[idx,'meaning'] or '太重' in df3.loc[idx,'meaning']\
+                or '出锋' in df3.loc[idx,'meaning'] or '颤笔' in df3.loc[idx,'meaning']\
+                or '收笔顿笔回勾' in df3.loc[idx,'meaning'] or '收笔回勾' in df3.loc[idx,'meaning']\
+                or '收笔顿笔回钩' in df3.loc[idx,'meaning'] or '收笔写成回钩' in df3.loc[idx,'meaning']\
+                or '起笔位置不准' in df3.loc[idx,'meaning'] or '太方' in df3.loc[idx,'meaning']\
+                or '行笔不顺直' in df3.loc[idx,'meaning'] or '垂点太圆' in df3.loc[idx,'meaning']\
+                or '衔接不自然' in df3.loc[idx,'meaning']:
                 '''*******************'''
                 df3.loc[idx,'delete_or_not'] = 2
             # ----------------------------------------------------------------------------------------------------------
-            if df3.loc[idx,'stroke'] + '较好' in  df3.loc[idx,'meaning']:
+            if df3.loc[idx,'stroke'] + '较好' in  df3.loc[idx,'meaning'] or df3.loc[idx,'stroke'] + '行笔较好' in  df3.loc[idx,'meaning']:
                 df3.loc[idx,'delete_or_not'] = 2
             # ----------------------------------------------------------------------------------------------------------                
             if  pras1 in df3.loc[idx,'meaning']:
@@ -215,8 +225,9 @@ def step0_getjs2csvpre(whichword):
                 df3.loc[idx,'funcname'] = 'double_sleep'
                 df3.loc[idx,'whichrowpnb'] = 'negative'
             # ----------------------------------------------------------------------------------------------------------            
-            if '起笔无顿笔' in df3.loc[idx,'meaning'] or '收笔无顿笔' in df3.loc[idx,'meaning'] or '收笔没有顿笔' in df3.loc[idx,'meaning']\
-                or '转折无顿笔' in df3.loc[idx,'meaning']:
+            if '起笔无顿笔' in df3.loc[idx,'meaning'] or '收笔无顿笔' in df3.loc[idx,'meaning']\
+                or '起笔没有顿笔' in df3.loc[idx,'meaning'] or '收笔没有顿笔' in df3.loc[idx,'meaning']\
+                or '转折无顿笔' in df3.loc[idx,'meaning'] or '转折处无顿笔' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'len_single'
                 df3.loc[idx,'whichrowpnb'] = 'negative'                            
             # ----------------------------------------------------------------------------------------------------------
@@ -248,31 +259,46 @@ def step0_getjs2csvpre(whichword):
                 df3.loc[idx,'funcname'] = 'len'
                 df3.loc[idx,'whichrowpnb'] = 'negative'
             # ----------------------------------------------------------------------------------------------------------
-            if '偏平' in df3.loc[idx,'meaning'] or '行笔方向太平' in df3.loc[idx,'meaning']:
-                df3.loc[idx,'funcname'] = 'slope_pp'
+            # if ('长短' in df3.loc[idx,'meaning'] or '长度' in df3.loc[idx,'meaning']) and '好' in df3.loc[idx,'meaning']:
+            if '长' in df3.loc[idx,'meaning']  and '好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'CONS_ROWNMB'] = 1                
+                df3.loc[idx,'funcname'] = 'len'
                 df3.loc[idx,'whichrowpnb'] = 'badlabs'
             # ----------------------------------------------------------------------------------------------------------
-            if '偏竖直' in df3.loc[idx,'meaning'] or '行笔方向太竖直' in df3.loc[idx,'meaning']:
+            if '长短' in df3.loc[idx,'meaning'] and '不准' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'len'
+                df3.loc[idx,'whichrowpnb'] = 'ele'                            
+            # ----------------------------------------------------------------------------------------------------------
+            if '偏平' in df3.loc[idx,'meaning'] or '行笔方向太平' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'slope_pp'
+                df3.loc[idx,'whichrowpnb'] = 'negative'
+            # ----------------------------------------------------------------------------------------------------------
+            if '偏竖直' in df3.loc[idx,'meaning'] or '行笔方向太竖直' in df3.loc[idx,'meaning'] or '行笔方向太垂直' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_cz'
                 df3.loc[idx,'whichrowpnb'] = 'badlabs'
             # ----------------------------------------------------------------------------------------------------------
-            if '向右倾斜' in df3.loc[idx,'meaning']:
+            if '倾斜角度不准' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'slope_tx'
+                df3.loc[idx,'whichrowpnb'] = 'ele'
+            # ----------------------------------------------------------------------------------------------------------
+            if '向右倾斜' in df3.loc[idx,'meaning'] or '行笔方向偏右' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_tx'
                 # df3.loc[idx,'whichrowpnb'] = 'positive'
             # ----------------------------------------------------------------------------------------------------------
-            if '向左倾斜' in df3.loc[idx,'meaning']:
+            if '向左倾斜' in df3.loc[idx,'meaning'] or '行笔方向偏左' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_tx'
                 # df3.loc[idx,'whichrowpnb'] = 'negative'
             # ----------------------------------------------------------------------------------------------------------
             if '斜度过大' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'slope_tx'
             # ----------------------------------------------------------------------------------------------------------
-            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] or '行笔方向不准' in df3.loc[idx,'meaning']\
+            if '起笔方向不准' in df3.loc[idx,'meaning'] or '收笔方向不准' in df3.loc[idx,'meaning'] \
                 or '顿笔方向不准' in df3.loc[idx,'meaning'] or '出钩方向不准' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'angle_3points'
                 df3.loc[idx,'whichrowpnb'] = 'ele'
             # ----------------------------------------------------------------------------------------------------------
             if '顿笔方向好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'CONS_ROWNMB'] = 1
                 df3.loc[idx,'funcname'] = 'angle_3points'
                 df3.loc[idx,'whichrowpnb'] = 'badlabs'
             # ----------------------------------------------------------------------------------------------------------
@@ -285,20 +311,42 @@ def step0_getjs2csvpre(whichword):
                 # df3.loc[idx,'whichrowpnb'] = 'positive'
             # ----------------------------------------------------------------------------------------------------------
             if '左高右低（向下倾斜）' in df3.loc[idx,'meaning']  and '横' in df3.loc[idx,'stroke']:
-                df3.loc[idx,'funcname'] = 'slope_pp'
-                # df3.loc[idx,'whichrowpnb'] = 'positive'
+                df3.loc[idx,'funcname'] = 'slope_tx'
+                df3.loc[idx,'whichrowpnb'] = 'negative'
             # ----------------------------------------------------------------------------------------------------------
             if '夹角太大' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'angle_2lines'
                 df3.loc[idx,'whichrowpnb'] = 'positive'
             # ----------------------------------------------------------------------------------------------------------
-            if '夹角太大' in df3.loc[idx,'meaning']:
+            if '夹角太小' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = 'angle_2lines'
                 df3.loc[idx,'whichrowpnb'] = 'negative'
             # ----------------------------------------------------------------------------------------------------------
             if '太长' in df3.loc[idx,'meaning'] and '太短' in df3.loc[idx,'meaning']:
                 df3.loc[idx,'funcname'] = '2parts_size_ratio'
-
+            # ----------------------------------------------------------------------------------------------------------
+            if '横长撇短不准' in df3.loc[idx,'meaning'] or '横短撇长不准' in df3.loc[idx,'meaning'] or '竖长横短' in df3.loc[idx,'meaning']\
+                or '竖短横长' in df3.loc[idx,'meaning'] or '横长竖短' in df3.loc[idx,'meaning'] or '横短竖长' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = '2parts_size_ratio'
+            # ----------------------------------------------------------------------------------------------------------
+            if '行笔方向不准' in df3.loc[idx,'meaning']:# or '行笔方向好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'slope_tx'
+                df3.loc[idx,'whichrowpnb'] = 'ele'
+            # ----------------------------------------------------------------------------------------------------------
+            if '行笔方向好' in df3.loc[idx,'meaning']:# or '行笔方向好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'slope_tx'
+                df3.loc[idx,'whichrowpnb'] = 'badlabs'
+            # ----------------------------------------------------------------------------------------------------------
+            if '出钩太长' in df3.loc[idx,'meaning']:# or '行笔方向好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'len_single'
+                df3.loc[idx,'whichrowpnb'] = 'positive'
+            # ----------------------------------------------------------------------------------------------------------
+            if '无出钩' in df3.loc[idx,'meaning']:# or '行笔方向好' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = 'len_single'
+                df3.loc[idx,'whichrowpnb'] = 'negative'
+            # ----------------------------------------------------------------------------------------------------------
+            if '左' in df3.loc[idx,'meaning'] and '高' in df3.loc[idx,'meaning'] and '右' in df3.loc[idx,'meaning']and '低' in df3.loc[idx,'meaning']:
+                df3.loc[idx,'funcname'] = '2stroke_start_pos'
         # df3.sort_values(by='delete_or_not',ascending=True,inplace=True)
         # df3['sortordr'] = ''
         #     if '较好' in df3.loc[idx,'meaning'] and pras1 not in df3.loc[idx,'meaning']:
@@ -353,9 +401,10 @@ def step1_findincompatiblejson(whichword):
     egnm = len(eg['shapes'])
     unequallendf = res[res['len'] != egnm]
     if unequallendf.empty:
-        print('-------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
-        # print('-----------------------------------------%s ai_data 内有 %s 张图片/json'%(df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
+        print('{} {} ai_data 内有 {} 张图片/json'.format('-'*50,df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
     else:
+        # print('warning: {} {} ai_data 内有 {} 个json文件的坐标点数量与范字不一致,请确认问题'.format('-'*25,df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
+        print("\033[37;41m\twarning: {} {} ai_data 内有 {} 个json文件的坐标点数量与范字不一致,请确认问题\033[0m".format('-'*25,df_1.loc['hanzi','value'],len(glob(lcalpth1 + '/' + '*' + '.json'))))
         print(unequallendf.loc[list(unequallendf.index),'jsflnm'])
     return lcalpth2
 # # # # # =======================================================================================================
@@ -384,7 +433,7 @@ def getcsvinfo(whichword,is_save):
         # df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0,usecols=list(range(14)))
         df_2 = pd.read_excel(filenm,skiprows=24,header=0,usecols=list(range(14)),converters={'first_point':str,'second_point':str})
     dict_1 = df_1.to_dict()[df_1.columns[0]]
-    df_2 = df_2[df_2['delete_or_not'] < 2]
+    df_2 = df_2[df_2['delete_or_not'] < 5]
 
     return dict_1,df_2
 # # # # # =======================================================================================================
@@ -413,8 +462,11 @@ def convcsv2jsrd(whichword,is_save):
     res['egpl'] = read_points(egjsflname)
     # df2 = df2[df2['delete_or_not'] == 0]
     # 需要 csv dimensionname 开始前两行为夸奖 和 鼓励
-    grp_a1 = df2.loc[[0,1],:]
-    df2 = df2.loc[2:,:]
+    # try:
+        # grp_a1 = df2.loc[[0,1],:]
+    # except:
+    grp_a1 = df2[df2['delete_or_not'] == 4]
+    df2 = df2[df2['delete_or_not'] < 2]
     res['evaluate_dim_l']  = list(map(lambda x,y:x+'__'+y,list(df2['dimensionname']),list(df2['whichrowpnb'])))
     df2['dimensionname'] = res['evaluate_dim_l']
     t = []
@@ -502,8 +554,11 @@ def genjsrules(whichword,is_save):
     # for i in range(1,6,1):
     #     exec('COLS_{} = {}'.format(i, list(df2[df2['COLS_NMB'] == i]['dimensionname'].values)))
     #     exec('WTS_{} = {}'.format(i, [1]*len(locals()['COLS_{}'.format(i)]) ))
-    grp_a1 = df2.loc[[0,1],:]
-    df2 = df2.loc[2:,:]
+    
+
+    grp_a1 = df2[df2['delete_or_not'] == 4]
+    df2 = df2[df2['delete_or_not'] < 2]
+
     res['evaluate_dim_l']  = list(map(lambda x,y:x+'__'+y,list(df2['dimensionname']),list(df2['whichrowpnb'])))
     df2['dimensionname'] = res['evaluate_dim_l']
     df3 = df2.copy()
@@ -603,10 +658,10 @@ def final_run_ver(whichworld,is_save):
 
     # print(new_whichrowpnb)
     # 学习怎么存xlsx
-    print(1)
+    # print(1)
 # # # # # =======================================================================================================
 def figrename(whichword,nmb):
-    fltoread = glob('./pre_csv/'+'*'+whichword+'*'+'.csv')
+    fltoread = glob('./pre_csv/'+'*'+whichword+'.csv')
     if fltoread != []:
         df = pd.read_csv(fltoread[0],sep=',',skiprows=24,header=0)
         df['dimensionname'] =  list(map(lambda x,y:x+'__'+y,list(df['dimensionname']),list(df['whichrowpnb'])))
@@ -670,7 +725,6 @@ class review_word():
             setattr(self, i,[])
 
         self.getfilelist()
-        # self.read_eg_points()
         # self.choose_dimension()
         # self.calculate_dim_score()
     # # # # ==========================================================================================================
@@ -686,57 +740,6 @@ class review_word():
         self.js_list = js_file_list
         self.pic_name_list = pic_file_list
     # # # # ==========================================================================================================
-    # # 获取范字的点坐标 ，考虑加一个输入参数 适应不同的字
-    # def read_eg_points(self):
-    #     jsflname = glob(self.eg_path + '/' + '*'+'.json')[0]
-    #     self.eg_p_l = read_points(jsflname)
-    # # # # ==========================================================================================================
-    # # # # ==========================================================================================================
-    """ 生成word.json 文件   以 丫、一 为例 生成 ya.json   yi.json
-        key 是固定的    ["dim_l","eg_p_l","evaluate_dim_l","name_dict","params_l","preprocess_data"]
-        目前 preprocess_data 是 [],  其他几项参照以前的文件 
-        主要是给每一项key 赋值，决定value
-        可能会再修改    """
-    def generatefile(self):
-        # # key: dim_l
-        v_0 = list(map(lambda x :"self." + x + " = []\n", self.evaluate_dim_l))
-        v_0 = ''.join(v_0)
-        # # key: eg_p_l
-        # v_1 = []
-        # [v_1.extend(i) for i in self.eg_p_l]
-        v_1 = self.eg_p_l
-        # # key: evaluate_dim_l
-        v_2 = self.evaluate_dim_l
-        # # key: name_dict
-        v_3 = {}
-        for i in self.evaluate_dim_l:
-            v_3[i] = i.split('__')
-        # # key: params_l
-        tmp={}
-        for k in self.rule.keys():
-            # vis_or_not = self.rule[k]['vis_or_not']
-            keylist = list(self.rule[k].keys())
-            # keylist.remove('vis_or_not')
-            bb=[];cc=[];dd=[];ee=[];ff=[];gg=[]
-            for i in keylist:
-                bb.append(str(self.rule[k][i]['first_point']))
-                cc.append(str(self.rule[k][i]['second_point']))
-                dd.append(str(self.rule[k][i]['thirdpara']))
-                ee.append(str(self.rule[k][i]['fourthpara']))
-                ff.append(str(self.rule[k][i]['fifthpara']))
-                gg.append(str(self.rule[k][i]['meaning']))
-            tmp[k[:-5]] = '[' + ','.join(list(map(lambda a1,b1,c1,d1,e1,f1,g1:"'"+a1+"',load_data(" + str(b1) + ',' + str(c1) + ','+d1+ ',' +e1+ ',' +f1+"),'"+g1+"'"  , keylist,bb,cc,dd,ee,ff,gg))) + ']'
-        v_4 = tmp
-        # # key: preprocess_data
-        v_5 = ''
-        tes = dict(zip(self.json_par,[v_0,v_1,v_2,v_3,v_4,v_5]))
-        with open(self.csv_savepath+ '/'+ self.word + '.json', 'w') as f:
-            json.dump(tes, f,indent=4)
-            # json.dump(tes, f)
-        # print(i)
-
-    # # # # ==========================================================================================================
-    # # # # ==========================================================================================================
     # # setattr getattr  & load
     def ldvalue(self,whichword,whichrule,ipt,vis_or_not):
         attr = '{}_index_eva_{}'.format(whichword,whichrule.__name__)
@@ -744,7 +747,6 @@ class review_word():
         resultuple = getattr(self,attr)
         self.load_score(resultuple[0],resultuple[1])
     # # # # ==========================================================================================================
-
     def choose_dimension(self):
         print('-----1-----')
         # print('-----没想好，之前是人工筛选，每个字都要筛选，工作量太繁杂。准备和书法老师协调-----')
@@ -757,14 +759,12 @@ class review_word():
     def calculate_dim_score(self):
         eg_p_l = self.eg_p_l
         for js_name,pic_name in tqdm(zip(self.js_list, self.pic_name_list)):
-            # print('jsonname:  %s'%js_name)
             p_l = read_points(self.data_path +'/'+ js_name)
             self.pic_name_l.append(pic_name)
             trans = nudged.estimate(self.eg_p_l,p_l)
             trans_location = trans.get_translation()
             trans_scale = trans.get_scale()
             p_Transed_l = [[(i[0]-trans_location[0])/trans_scale,(i[1]-trans_location[1])/trans_scale] for i in p_l]
-            
             self.p_l = p_l
             self.p_Transed_l = p_Transed_l
             # # # # ==========================================================================
@@ -809,8 +809,6 @@ class review_word():
             """
             # # k: whichrule
             for k in self.rule.keys():
-
-                # print('------------------------------------------------------------------------------------------  %s'%k)
                 vis_or_not = int(self.visornot[k])
                 keylist = list(self.rule[k].keys())
                 i = keylist[0]
@@ -858,11 +856,11 @@ class review_word():
                 clearHis()
     
     def cal_score(self):
-        def sort_dict_key(dict_): 
+        def sort_dict_key(dict_):
             # print('delete')
             sorted_d = {}
-            for i in sorted (dict_) : 
-                sorted_d[i] = dict_[i] 
+            for i in sorted (dict_) :
+                sorted_d[i] = dict_[i]
             return sorted_d
 
         self.calculate_dim_score()
@@ -914,7 +912,14 @@ class review_word():
             # data_columns_n = df[j].tolist()
             # data_columns = df[j]
             # sns.distplot(data_columns, ax=axs[0])
-            data_zscore = (data_columns_n - np.asarray(data_columns_n).mean())/np.asarray(data_columns_n).std()
+            # print(j)
+            if 'pppp' in j:
+                a = data_columns_n - np.asarray([0]*len(data_columns_n))
+                sd = np.sqrt(sum(a*a)/len(data_columns_n))
+                data_zscore = (data_columns_n - np.asarray([0]*len(data_columns_n)))/sd
+                # data_zscore = (data_columns_n - np.asarray([0]*len(data_columns_n)).mean())/np.asarray(data_columns_n).std()
+            else:
+                data_zscore = (data_columns_n - np.asarray(data_columns_n).mean())/np.asarray(data_columns_n).std()
             # print('mean: ',np.asarray(data_columns_n).mean())
             # print('std: ',np.asarray(data_columns_n).std())
             df3.loc['mean',j] = np.asarray(data_columns_n).mean()
@@ -923,23 +928,46 @@ class review_word():
             # df3.to_csv(self.finalrespath +'/'+ self.meanstdcsvname + '.csv')
             # 画图  暂时不画  save_flag > 1 可以改为别的判断
             if self.is_save > 1:
-                # sns.distplot(data_zscore)
-                sns.distplot(data_zscore,kde=True )
-                # sns.distplot(data_zscore,hist=False,kde=True)
-                # plt.hist(data_zscore,bins = 100,normed=True)
                 if j == 'praise__nxgzzj':
                     figname=j
                 else:
                     figname = df_chinese.loc[0,j] + '_' +j.split('_')[-1]# + '_'  + j.split('_')[8]
                     # print(figname)
+                                
+                # sns.distplot(data_zscore)
+                # sns.distplot(data_zscore,kde=True )
+                fig = plt.figure()
+                # plt.rcParams['font.sans-serif']=['Agg']
+                # plt.rcParams['axes.unicode_minus']=False
+                ax1 = fig.add_subplot(1, 2, 1)
+                sns.distplot(np.array(data_columns_n),bins=round(len(data_columns_n)/5),kde=True )
+                # ax1.set_title('  data_columns_n')
+                ax1.set_title('计算原始值  {} 个'.format(len(data_columns_n)),fontproperties=zhfont)
+                ax2 = fig.add_subplot(1, 2, 2)
+                sns.distplot(data_zscore,bins=round(len(data_zscore)/5),kde=True )
+                ax2.set_title('-mean/std之后的值  {} 个'.format(len(data_zscore)),fontproperties=zhfont)
+                # ax2.set_title('-mean/std  data_zscore')
+
+                # sns.distplot(data_zscore,hist=False,kde=True)
+                # plt.hist(data_zscore,bins = 100,normed=True)
+                # plt.suptitle('figname')
+                plt.suptitle(figname,fontproperties=zhfont)
+
                 try:
-                    plt.savefig(self.figpath+figname, format='png', dpi=600, pad_inches = 0)
+                    plt.savefig(self.figpath+figname, format='png', dpi=800, pad_inches = 0)
                 except FileNotFoundError:
-                    plt.savefig(self.figpath+figname.replace('/',''), format='png', dpi=600, pad_inches = 0)
-                plt.clf()
-            # print('normaltest data_columns_n :{}'.format(scipy.stats.normaltest(data_columns_n)))
-            # print('normaltest data_zscore    :{}'.format(scipy.stats.normaltest(data_zscore)))
-            # print('-------- testing ----------------------------------------------------- {}'.format(figname))
+                    plt.savefig(self.figpath+figname.replace('/',''), format='png', dpi=800, pad_inches = 0)
+                print('{}   {}'.format(figname,len(data_columns_n)))
+
+                # plt.clf()
+                plt.cla()
+                plt.close("all")
+                # try:
+                print('normaltest data_columns_n :{}'.format(scipy.stats.normaltest(data_columns_n)))
+                print('normaltest data_zscore    :{}'.format(scipy.stats.normaltest(data_zscore)))
+                # except ValueError:
+                #     pass
+                print('-------- testing ------------------------------------------------------------------------------------ {}'.format(figname))
             # res,df2 = getcsvinfo(whichword,is_save)
             df3.to_csv(self.csv_savepath + self.meanstdcsvname + '.csv')
             df3.to_csv(self.finalrespath +'/'+ self.meanstdcsvname + '.csv')

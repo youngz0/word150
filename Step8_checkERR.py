@@ -4,28 +4,34 @@
 '''会在pinyin.xlsx  中 vis_or_not 置1 的 每一行单独生成一个csv文件'''
 from comnfunc import *
 
-hanzi = '么'
-df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
-df = df_cfg.set_index(['word'])
-pinyin = df.loc[hanzi,'pinyin']
-filenm = './pre_csv/'+pinyin+' (copy).xlsx'
-filenm = './pre_csv/'+pinyin+'.xlsx'
-par = '么'
-df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0)
-vis = df_2[df_2['vis_or_not'] == 1]
-for i in vis.index:
-    df_1 = pd.read_excel(filenm,sep=',',nrows=27,header=None)
-    df_1.to_csv('./pre_csv/' + pinyin + '.csv',mode='w',index=False,header=False)
-    # df_2.loc[i,'vis_or_not'] = 1
-    # df_2.loc[i,'delete_or_not'] = 0
-    df_3 = df_2.loc[[i],:]
-    df_3.to_csv('./pre_csv/' + pinyin + '.csv',mode='a',index=False,header=False)
-    # print(i)
-    final_run_ver(hanzi,1)
-    figrename(pinyin,i)
 
+def checkerror(hanzi):
+    df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
+    df = df_cfg.set_index(['word'])
+    pinyin = df.loc[hanzi,'pinyin']
+    # filenm = './pre_csv/'+pinyin+' (copy).xlsx'
+    filenm = './pre_csv/'+pinyin+'.xlsx'
+    # par = '么'
+    df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0)
+    vis = df_2[df_2['vis_or_not'] == 1]
+    for i in vis.index:
+        df_1 = pd.read_excel(filenm,sep=',',nrows=27,header=None)
+        df_1.to_csv('./pre_csv/' + pinyin + '.csv',mode='w',index=False,header=False)
+        # df_2.loc[i,'vis_or_not'] = 1
+        # df_2.loc[i,'delete_or_not'] = 0
+        df_3 = df_2.loc[[i],:]
+        df_3.to_csv('./pre_csv/' + pinyin + '.csv',mode='a',index=False,header=False)
+        # print(i)
+        final_run_ver(hanzi,1)
+        figrename(pinyin,i)
 
+if __name__ == '__main__':
 
+    lst = '舟 困 丞 昌 回 店 布'.split(' ')
+    lst = '白'.split(' ')
+
+    for par in lst:
+        checkerror(par)
 
 
 

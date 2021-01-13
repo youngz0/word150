@@ -6,19 +6,15 @@ from glob import glob
 import json
 import collections
 from kernel_rules import kernel_rules
+import random
 # # 随便写的 要改
-whichwd = 'ka'
+whichwd = 'ye'
 js_1 = "./words_150/"+whichwd+"/results/"+whichwd+"_rules.json"
 js_2 = "./words_150/"+whichwd+"/results/"+whichwd+".json"
 
-# kernel_rules_1 = kernel_rules(
-# 	_configs=tuple([js_1,js_1]), 
-# 	_review_configs=tuple([js_2,js_2]),
-# 	title="垂露竖的写法与应用（丫）"
-# )
 kernel_rules_1 = kernel_rules(
-	_configs=tuple([js_1]), 
-	_review_configs=tuple([js_2]),
+	_configs=tuple([js_1,js_1]), 
+	_review_configs=tuple([js_2,js_2]),
 	title="垂露竖的写法与应用（丫）"
 )
 
@@ -48,7 +44,8 @@ f_duplict = list(set(list(map(lambda x:x.split('.')[0].split('_')[0],lst2))))
 fdpt = sorted(f_duplict)[:]
 
 # f =  open('./result_list.txt',"r").readlines()
-for l in fdpt:
+for l in range(1000):
+# for l in fdpt:
 	# if (".json" in l) and ("_" not in l):
 	"必须要改，原来是result_list.txt 中28519907_b.json  28519907.jpg  28519907_o.jpg   28519903.json"
 	# if (".json" in l): 
@@ -61,6 +58,9 @@ for l in fdpt:
 		# idnm = 32652923
 		# wenlist = glob('./instances/'+str(idnm)+'*'+'.json')
 		wenlist = glob(pathname + str(idnm) + '*' + '.json')
+		wenlist = random.sample(lst1,10)
+		# print(wenlist)
+
 		# print('file_id :%s  len(file_id list): %s '%(idnm,len(wenlist)))
 		next_json_wen = []
 		for  jsfl in wenlist:
@@ -81,7 +81,7 @@ for l in fdpt:
 		d = dict(lesson_id=lesson_id, task_id=task_id, hid=hid, id_location=id_location)
 		if lesson_id == 1533:
 
-			final_result = kernel_rules_1.inference(next_json_wen, **d)
+			final_result = kernel_rules_1.inference(next_json_wen, next_json_hua, **d)
 			# final_result = kernel_rules_1.inference(next_json_wen, next_json_hua, next_json_wen, next_json_hua, **d)
 
 		elif lesson_id == 1534:
@@ -92,7 +92,7 @@ for l in fdpt:
 
 		with open(jsscoresavepth+str(idnm)+'.json', 'w') as json_file:
 			json_file.write(json_str)
-		print('===========================================================================')
+		# print('===========================================================================')
 
 	else:
 		continue

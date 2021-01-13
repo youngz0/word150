@@ -1,30 +1,29 @@
 # coding=utf-8
 from comnfunc import  *
 import datetime
+from Step0_prepare_csv import lst
 t0 = datetime.datetime.now()
-
 if __name__ == '__main__':
     t1 = datetime.datetime.now()
     print('--------testing-----------------')
-    lst = '丫 卡 井 勺 儿 反 币 支 五 去 白 百 米 网 牙 门 羊 末 因 只 三 义 人 云 叶 斤 方 空 见 子'.split(' ')
-    # lst = '正 木 自 西 禾 田 火 水 成 山 小 大 在 凡 可 冬 甘 闪 戊 央 尔 代 民 必 习 式 长 氏 父 交'.split(' ')
-    # lst = '天 寸 乎 余 孔 戈 虫 古 丰 个 它 亏 川 月 穴 犬 买 本 句 之 主 内 农 么 厅 匀 书'.split(' ')
-    # lst = '勺 小 寸'.split(' ')
-    # lst = '币 儿 反 井 卡 去 勺 五 丫 支 叶'.split(' ')
-    save_flag = 0 
 
+    # lst = '白'.split(' ')
+
+    ''' Step1，主要是为了生成两个json和均值方差的csv文件，一般情况下save_flag 置0 即可， 
+        Step8，在pinyin.xlsx中，vis_or_not 这一列，每一个想要可视化 保存图的行 相应的行填1，此时save_flag置1，会循环把每一行转为pinyin.csv 保存图片
+        Step2，不想为每一行单独存图，但需要对每一个维度看计算的值是否符合正态分布，save_flag 大于 1 就行，可以改为别的值'''
+    save_flag = 0
+    
     a1111 = 1
     if a1111 == 1 :
         '''a1111等于1时，计算 lst 内的多个字 '''
         for par in lst:
-            print('--------calculating-----------------: %s'%par)
+            print('{}calculating {}: {}'.format('-'*20,'-'*20,par))
             final_run_ver(par,save_flag)
     else:
-        par = '云'
+        par = '白'
+        # par = '川'
         final_run_ver(par,save_flag)
-    # # word.generatefile()
     t2 = datetime.datetime.now()
     print(t2-t1)
-
-    print('----====----====----====----====----====----====----====----====----====')
-
+    print('----===='*10)
