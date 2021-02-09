@@ -18,7 +18,7 @@ from glob import glob
 class review_word_online():
 
 
-    # def __init__(self,js_list,word_yaml): buzhidaosheigaide
+    # def __init__(self,js_list,word_yaml): 
     def __init__(self,word_yaml):
 
         f = open(word_yaml,'r')
@@ -202,15 +202,15 @@ class review_word_offline():
         return dim_score_df
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    whichword = 'ya'
+#     whichword = 'ya'
 
-    data_path ='./ai_data/'+whichword+'/'
-    pth2 = './words_150/'+whichword+'/results/'+whichword+'.json'
-    js_name_list = glob(data_path+'*'+'.json')
-    tecls = review_word_online(pth2)
-    resdf = tecls.cal_score(js_name_list)
-    print(resdf)
+#     data_path ='./ai_data/'+whichword+'/'
+#     pth2 = './words_150/'+whichword+'/results/'+whichword+'.json'
+#     js_name_list = glob(data_path+'*'+'.json')
+#     tecls = review_word_online(pth2)
+#     resdf = tecls.cal_score(js_name_list)
+#     print(resdf)
 
-    print(1)
+#     print(1)

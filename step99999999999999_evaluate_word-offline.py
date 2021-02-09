@@ -1,4 +1,5 @@
 # _*_coding:utf-8_*_
+'''本文件没什么用'''
 import json
 import os
 from pathlib import Path
@@ -12,24 +13,13 @@ import pandas as pd
 from dim_utils_v3_1 import *
 from tqdm import tqdm
 import yaml
-# from comnfunc import read_points
+from comnfunc import read_points
 from glob import glob
-# whichwd = 'shao'
-# pth1 = './words_150/'+whichwd+'/ai_data/'
-# jsfllst = glob(pth1 + '*' + '.json')
-# for i in jsfllst:
-#     te = {}
-#     te['images'] = '2/2'
-#     te['annotations'] = read_points(i)
-#     te['results'] = [1]
-#     with open('./ai_data/' +whichwd+'/'+ os.path.split(i)[1] , 'w') as f:
-#         json.dump(te, f,indent=4)    
-# print(1)
 
 class review_word_online():
 
 
-    # def __init__(self,js_list,word_yaml): buzhidaosheigaide
+    # def __init__(self,js_list,word_yaml): 
     def __init__(self,word_yaml):
 
         f = open(word_yaml,'r')
@@ -37,8 +27,9 @@ class review_word_online():
         # self.cfg = yaml.load(f, Loader=yaml.SafeLoader)
         f.close()
 
-        # self.data_path = 'ai_data/'   路径怎么改？
-        self.data_path = './words_150/ya/'+'ai_data/'
+        # self.data_path = 'ai_data/'  
+        pinyin = word_yaml.split('/')[-1].split('.')[0]
+        self.data_path = './words_150/'+pinyin+'/'+'ai_data/'
 
         # self.data_path = 'ai_data_test/'
         self.save_path = 'result/'
@@ -96,7 +87,6 @@ class review_word_online():
     def cal_score(self,js_list):
         def sort_dict_key(dict_):
             sorted_d = {}
-
             for i in sorted(dict_):
                 sorted_d[i] = dict_[i]
             return sorted_d
@@ -112,7 +102,6 @@ class review_word_online():
         dim_score_df = pd.DataFrame(self.score_dict)
 
         return dim_score_df
-
 
 
 class review_word_offline():
@@ -212,7 +201,7 @@ class review_word_offline():
         if self.save_data_frame:
             print('dim_score_df: {}'.format(dim_score_df))
             # dim_score_df.to_csv("dim_score-"+self.whichwd+".csv")
-            dim_score_df.to_csv("./words_150/dim_score-"+self.whichwd+".csv")
+            dim_score_df.to_csv("./words_150/dim_score_"+self.whichwd+".csv")
             print('done')
 
         return dim_score_df
@@ -220,7 +209,7 @@ class review_word_offline():
 
 if __name__ == '__main__':
 
-    whichword = 'ya'
+    whichword = 'ge_war'
 
 
     # data_path = './words_150/jing/ai_data/'
@@ -248,10 +237,10 @@ if __name__ == '__main__':
 
 
     # =======================================================================================================================================================
-    # pth2 = './words_150/'+whichword+'/results/'+whichword+'.json'
+    pth2 = './words_150/'+whichword+'/results/'+whichword+'.json'
     
-    # tecls = review_word_online(pth2)
-    # tecls.cal_score(js_name_list)
+    tecls = review_word_online(pth2)
+    tecls.cal_score(js_name_list)
 
 
     # =======================================================================================================================================================
@@ -264,11 +253,11 @@ if __name__ == '__main__':
 
 
 
-    # word = review_word_offline(js_name_list, pic_name_list,'./ya/ya.json')
-    word = review_word_offline(js_name_list, pic_name_list,pth2,whichword)
+    # # word = review_word_offline(js_name_list, pic_name_list,'./ya/ya.json')
+    # word = review_word_offline(js_name_list, pic_name_list,pth2,whichword)
 
-    # word = review_word_offline(js_name_list, pic_name_list,'./yi.yaml')
-    # # chen.calculate_dim_score()
-    # word.load_label_data()
-    word.cal_score(js_name_list)
+    # # word = review_word_offline(js_name_list, pic_name_list,'./yi.yaml')
+    # # # chen.calculate_dim_score()
+    # # word.load_label_data()
+    # word.cal_score(js_name_list)
     print(1)

@@ -12,10 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib
 from scipy import stats, special
 # import seaborn as sns
-# import cv2
+
 from matplotlib import image
 import matplotlib.pyplot as plt
-# from PIL import Image, ImageDraw, ImageFont
 import json
 
 from evaluate_word import review_word_online
@@ -36,24 +35,24 @@ def fullsize_rate(df):
     # print(ztdf,xjdf,wqdf)
     
     if ztdf >= 0.4 and wqdf >=0.4:
-        kua_list.append('a1k1')  #笔画平稳
+        kua_list.append('bhpw')  #笔画平稳
     elif ztdf >= 0.4:
-        kua_list.append('a1k1')  #书写习惯好
+        kua_list.append('bhpw')  #书写习惯好
     elif ztdf >= 0.4:
         if df.shape[0] >= 10:
-            kua_list.append('a1k1') #有耐心
+            kua_list.append('bhpw') #有耐心
         else:
-            kua_list.append('a1k1') #夸认真
+            kua_list.append('bhpw') #夸认真
             
     
     if np.average([ztdf, xjdf], weights=[0.3, 0.7]) > 0.4:
-        kua_list.append('a1k1') # 夸观察仔细
+        kua_list.append('bhpw') # 夸观察仔细
     if np.average([ztdf, wqdf], weights =[0.3, 0.7]) > 0.4:
-        kua_list.append('a1k1') # 夸卷面整齐
+        kua_list.append('bhpw') # 夸卷面整齐
     elif np.average([ztdf, wqdf], weights =[0.3, 0.7]) > 0.4:
-        kua_list.append('a1k1') # 书写习惯好
+        kua_list.append('bhpw') # 书写习惯好
     if len(kua_list) == 0:
-        kua_list.append('a1k1') # 夸认真
+        kua_list.append('bhpw') # 夸认真
 
     return kua_list
 
@@ -76,7 +75,11 @@ class final_rule:
         if not config or not review_config:
             return None
         self.review_config = review_config
-
+        #### ----------------------------------------------deldel
+        with open(review_config) as pinyinjson:
+            _jsrdrule = json.load(pinyinjson)
+        self.jsrdrule = _jsrdrule['params_l']
+        #### ----------------------------------------------
         ymlfile = open(config, "r")
         self.cfg = json.load(ymlfile)
         # self.cfg = yaml.load(ymlfile)
@@ -84,7 +87,7 @@ class final_rule:
         self.df_mean_std = pd.read_csv(self.cfg["CSV_PATH"], index_col=0)
         self.drop_items = self.cfg["DROPS"]
 
-        ## 
+        ## Column & weights
         self.cols_1 = self.check_yaml_list("COLS_1")
         self.w_1 = self.check_yaml_list('WTS_1')
 
@@ -109,14 +112,10 @@ class final_rule:
         ## -------------------
         ## --- choose cons ---
         ## -------------------
-
         self.group_cons_1 = self.check_yaml_list('CONS_1')
-
-        self.group_cons_2_level_1 = self.check_yaml_list('CONS_2')
-
+        self.group_cons_2 = self.check_yaml_list('CONS_2')
         self.group_cons_3 = self.check_yaml_list('CONS_3')
-
-        self.group_cons_4_level_1 = self.check_yaml_list('CONS_4')
+        self.group_cons_4 = self.check_yaml_list('CONS_4')
 
         ## -------------------
         ## --- choose pros ---
@@ -136,7 +135,7 @@ class final_rule:
 
         ## ---------------------------
         ## --- Dict of cons & pros ---
-        ## ---------------------------                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+        ## ---------------------------
         ## cons:1 , pros:2
         self.cons_and_pros = {}
 
@@ -149,11 +148,17 @@ class final_rule:
 
         self.name_d = self.cfg['NAMES_DICT']
         # self.name_d = dict((k.encode('utf8'), v) for (k, v) in self.name_d.items())
-
-        # print(self.name_d)
-        # print(type(self.name_d))
-        # print(1)
-        # print('pause')
+    #### ----------------------------------------------deldel
+    def filtdim(self,funcname):
+        tmplst1 = list(set(self.jsrdrule.keys()).intersection(set(map(lambda x :'evaluate_' + x,funcname))))
+        aa = list(map(lambda x :self.jsrdrule[x].split("'"),tmplst1))
+        tmkl1 = []; tmkl2 = []
+        [tmkl1.extend(i) for i in aa]
+        for ite in tmkl1:
+            if ite.startswith('a2') or ite.startswith('a3') or ite.startswith('a4'):
+                tmkl2.append(ite)
+        return tmkl2
+    #### ----------------------------------------------
 
     def check_yaml_list(self, key_name = ''):
         if self.cfg[key_name]==[None]:
@@ -167,90 +172,88 @@ class final_rule:
             self.drop_items = []
         all_result = all_result.drop(self.drop_items, axis=1)
         only_result = all_result.rename(columns={'00_pic_name_l':"0_name"})
-        # print(only_result['22_ch_slp_d_pp_l'])
 
 
         df_copy_noabs = only_result.copy(deep=True)
         df_copy = only_result.copy(deep=True)
-        # print(df_copy['36_cls_qb_pos_tg'])
 
-        # print(df_copy)
         # df_copy.to_csv("/app/instances/df_copy.csv", sep='\t', encoding='utf-8')
-        df_copy.to_csv("./instances/df_copy.csv", sep='\t', encoding='utf-8')
-
-
-        positive_l = ["zhdh_dhtx",\
-                        "nhxj_nhqbd","spxj_phdx","ssjj_jjbd","ssjj_jjgd","xzs_shqxwq_wq","cls_shqxwq_wq","cls_sxcl","szchxd_hblx","ch_qsdzgd","san_hblx",\
-                        "san_xdbz","sxjg_sxjjgd","mu_shqxwq_wq","fen_dzdtx","fen_pngxjdx_na","fen_pngxjdd_pie","rzt_rzttx","sxjg_sxjjty","nhxj_nhpbd",\
-                        "phxj_phwq","nhxj_nhwq","ds_shqxwq_wq","zhdh_zhgc","wxjg_hcsd","jjxj_zhqbkx","zhdh_xbsbzgyd","rzzt_t_ct_d","nhxj_qbwzpd",\
-                        "nhxj_nhtw","szhcddb_chpc","zhpwg_wgsbbq","zhpwg_wtz","zch_chpc","kz_kztx","kz_kzhcsd","kz_kzwztkw","kz_kztx","chi_pbsgc",\
-                        "phqbgd","zzjg_czddgrzt","czd_zrzdgyb","czd_zyrjlty","rzt_phtz","rzt_nhtz" ,"bzph_phc" ,"chi_lhjjd","chen_sxjjgd","chen_ldzybdc",\
-                        "chen_ldwzty"  ,"shgc" ,"jjy" ,"tc", "gd","tg","43_zh_break_left_l", "44_zh_pos_dif_ps_l", "45_zh_pos_dif_px_l", "jd", "xcl"]
-
-        negative_l = ["szchxd_hhxdtx","cls_sxtd","xzs_xzstd","ssjj_jjgx","zzab_zzwdb","chyz_wqsb","san_cdblh","san_shcdby","sxjg_sxjjgx",\
-                        "fen_dzdtd","fen_pngxjdd_na","fen_pngxjdx_pie","rzt_rzttd","sxjg_sxjjtj","zhdh_zhgd","wxjg_gzsd","wxjg_hdsc","jjxj_zhqbks",\
-                        "zhdh_xbzymdpq","nhxj_qbwzg","zch_chtx","zhpwg_hphtx","czsz_sbszhtx","szhcddb_chpd","zhpwg_whdpd","zch_chpd","kz_kzwztkl",\
-                        "hzxg_hzgqbps","kz_kztd","phqbgg","zzjg_czdtx","czdwzbz","czd_zyrbhxl","rzt_phtw","rzt_nhtw" ,"zsyys_zjshqbd" ,"zsyys_msd" ,\
-                        "czsz_szhhd" ,"gg_shtd" ,"bzph_phd" ,"chi_dmsbdz" ,"chi_shqbd" ,"chi_phtw" ,"chen_sxjjgx" ,"chen_ssllxs" ,"chen_chtd","chen_ldwztj",\
-                        "hzztjg_dpggg" ,"sdhc" ,"wdb" ,"guoduan" ,"jjj" ,"td" ,"gx" ,"41_zh_connect_right_l" ,"len_wqb_l" ,"len_wsb_l" ,"jx" ,"xdl"]
-
-        bad_l = ["ssjj_jjjd","cls_clscdh","san_cdblh","san_jj_jh","ch_hhzhzxqb","rphxj_xpgysp","rphxj_xpgycz",\
-                    "mu_hhtp","jjxj_zhpfzs","rphxj_xpgysp","rphxj_xpgycz","szchxd_hhgp","szchwz_hyqsys_sb","szchwz_hyqsys_qb","zch_chtp","zhpwg_hphtp",\
-                    "hzxg_xgbxpz","dp_dpxdpcz","czd_zyrzyyd","phqxddpp","nhqxddpp","czsz_sbszhtp" ,"chen_chtp" ,"dpggsmpq" ,"hhtp" ,"22_ch_slp_d_pp_l"]
+        df_copy.to_csv("./instances/df_copy.csv", sep='\t', encoding='utf-8')  #deldel
 
         for c_name in only_result.columns:
-           if "name" not in c_name:
-
-                temp_val = special.erf( (only_result[c_name] - self.df_mean_std[c_name]["mean"])/(self.df_mean_std[c_name]["std"]/math.sqrt(2)) )
-                # df_copy[c_name] = special.erf(temp_val)
-                df_copy[c_name] = temp_val
-                
-
-
-                # ================================================================================
-
-                
-                if 'positive' in c_name:
-                    df_copy[c_name] = df_copy[c_name].apply(lambda a : np.where(a>0, 1-a, abs(1)))
-                elif 'negative' in c_name:
-                    df_copy[c_name] = df_copy[c_name].apply(lambda a : np.where(a<0, 1+a, abs(1)))
-                elif 'badlabs' in c_name:
-                    df_copy[c_name] = abs(temp_val)
+            if "name" not in c_name:
+                # if c_name == 'a3dykjbhbh1__wogou_200612__5_wcg__negative':
+                #     print(1)
+                ## 单独处理 起、收笔方向
+                # if "bfxbz" in c_name:
+                #     only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.1, None, a))
+                # #### ------------------------------------------------------------------------------#deldel
+                # ## 出钩方向不准
+                # if "cgfxbz" in c_name:
+                #     only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.1, None, a))
+                # ## 顿笔方向好
+                # if "dbfxh" in c_name:
+                #     only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.1, None, a))
+                # ## 无顿笔 没有顿笔 起收笔没有 有起收意识 有起收笔意识 有收笔意识
+                # if "wdb" in c_name or "mydb" in c_name or "qsbmy" in c_name or "yqsys" in c_name or "yqsbys" in c_name or "ysbys" in c_name:
+                #     only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.06, None, a))
+                #### ------------------------------------------------------------------------------
+                dealkl1 = self.filtdim(['angle_3points','2angle_3points'])
+                dealkl2 = self.filtdim(['double_aware','double_sleep','len_single'])
+                ## 出钩方向不准 顿笔方向好
+                if c_name in dealkl1 and ("bfxbz" in c_name or "cgfxbz" in c_name):
+                    only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.1, None, a))
+                ## 无顿笔 没有顿笔 起收笔没有 有起收意识 有起收笔意识 有收笔意识
+                if c_name in dealkl2:
+                    only_result[c_name] = only_result[c_name].apply(lambda a : np.where(a<0.06, None, a))
+                #### ------------------------------------------------------------------------------
+                ## sigmoid
+                item_v = ((only_result[c_name]-self.df_mean_std[c_name]["mean"])/(self.df_mean_std[c_name]["std"]/math.sqrt(2)))
+                item_v_nan = item_v.isnull().all()
+                if item_v_nan:
+                    print(item_v.count())
+                    print(item_v.isnull().sum())
                 else:
-                    df_copy[c_name] = 1-abs(temp_val)
-                # ================================================================================
-                # if any(ele in c_name for ele in positive_l):
-                #     df_copy[c_name] = df_copy[c_name].apply(lambda a : np.where(a>0, 1-a, abs(1)))
-                # elif any(ele in c_name for ele in negative_l):
-                #     df_copy[c_name] = df_copy[c_name].apply(lambda a : np.where(a<0, 1+a, abs(1)))
-                # elif any(ele in c_name for ele in bad_l):
-                #     df_copy[c_name] = abs(temp_val)
-                # else:
-                #     df_copy[c_name] = 1-abs(temp_val)
-                # ================================================================================
+                    norm_dist_v = (only_result[c_name]-self.df_mean_std[c_name]["mean"])/(self.df_mean_std[c_name]["std"]/math.sqrt(2))
 
-                df_copy_noabs[c_name] = (temp_val)
+                    temp_val = special.expit(norm_dist_v)
+                    temp_val_mid = (1.3 - np.exp(-0.3*(norm_dist_v/0.7)**2))/1.3
+                    
+                    # ================================================================================
+
+                    ## 右侧 - 不好
+                    if 'positive' in c_name:
+                        df_copy[c_name] = 1.0 - temp_val
+                    ## 左侧 - 不好
+                    elif 'negative' in c_name:
+                        df_copy[c_name] = temp_val
+                    ## 中间 - 不好
+                    elif 'badlabs' in c_name:
+                        df_copy[c_name] = abs(temp_val*2 - 1)
+                    ## 两侧 - 不好
+                    else:
+                        df_copy[c_name] = 1-abs(temp_val*2 - 1)
+
+
+                    df_copy_noabs[c_name] = (temp_val)
                 
         # df_copy.to_csv("/app/instances/df_copy_a.csv", sep='\t', encoding='utf-8')
-        df_copy.to_csv("./instances/df_copy_a.csv", sep='\t', encoding='utf-8')
-
-
+        # df_copy.to_csv("/app/instances/df_copy_a.csv", sep='\t', encoding='utf-8')
+        df_copy.to_csv("./instances/df_copy_a.csv", sep='\t', encoding='utf-8')  #deldel
 
         df_totalscore = pd.DataFrame(columns=['name',u'总体得分',u'弯曲度得分', u'细节得分'])
 
         for i in range(df_copy.shape[0]):
             
-            score1 = (np.average(list(df_copy.loc[i, self.cols_1].values), weights=self.w_1)) if len(self.w_1) > 0 else 0
-            score2 = (np.average(list(df_copy.loc[i, self.cols_2].values), weights=self.w_2)) if len(self.w_2) > 0 else 0
-            score3 = (np.average(list(df_copy.loc[i, self.cols_3].values), weights=self.w_3)) if len(self.w_3) > 0 else 0
-            score4 = (np.average(list(df_copy.loc[i, self.cols_4].values), weights=self.w_4)) if len(self.w_4) > 0 else 0
+            score1 = (np.average(list(df_copy.fillna(0).loc[i, self.cols_1].values), weights=self.w_1)) if len(self.w_1) > 0 else 0
+            score2 = (np.average(list(df_copy.fillna(0).loc[i, self.cols_2].values), weights=self.w_2)) if len(self.w_2) > 0 else 0
+            score3 = (np.average(list(df_copy.fillna(0).loc[i, self.cols_3].values), weights=self.w_3)) if len(self.w_3) > 0 else 0
+            score4 = (np.average(list(df_copy.fillna(0).loc[i, self.cols_4].values), weights=self.w_4)) if len(self.w_4) > 0 else 0
             # score5 = df_copy.loc[i, self.cols_5].values[0]
-            # score5 = 0
+
 
             # score_total = np.average([score1,score2,score3,score4,score5],weights=[0.8,0.8,1,1,0.5])
             score_total = np.average([score1,score2,score3,score4],weights=[0.8,0.8,1,1])
-            # print("o"*100)
-            # print(score1,score2,score3,score4,score5, score_total)
 
             score_curve = df_copy.loc[i, self.curve_cols].mean()
             score_detail = df_copy.loc[i, self.detail_cols].mean()
@@ -264,25 +267,22 @@ class final_rule:
         final_result = {"1":[],"2":[],"3":[],"4":[],"5":[],"praise":[]}
 
 
-        whole_praise = fullsize_rate(df_totalscore)
+        # whole_praise = fullsize_rate(df_totalscore)
+
+        ## ---------------------------------
+        ## ------ select praise item -------
+        ## ---------------------------------
         count_praise = 0
 
+        whole_praise = ['a1k1','a1k2']
         df_totalscore_new = pd.to_numeric(df_totalscore[u'总体得分'])
 
-        #print("|"*50)
-        #print(df_copy)
-        # print(whole_praise)
-        # import sys
-        # print(sys.stdin.encoding)
-
         for lz in whole_praise:
-            if count_praise >1:
+            if count_praise >1:  ## choose 2 praicse items
                 break
 
             praise_max_idx = df_totalscore_new.idxmax()
             praise_max_loc = df_totalscore.loc[praise_max_idx,"name"]
-            # print("+"*50)
-            # print(praise_max_idx)
 
             df_copy = df_copy.drop(praise_max_idx, axis=0)
             df_totalscore_new = df_totalscore_new.drop(praise_max_idx, axis=0)
@@ -291,142 +291,130 @@ class final_rule:
             count_praise += 1
             # print(praise_max_idx,praise_max_loc)
             final_result["praise"].append({lz: praise_max_loc})
-            # print(lz)
-            # print(lz.encode(sys.stdin.encoding))
-            # print(lz.encode("ascii",'ignore').decode("utf-8"))
-
-        # print(type(final_result["praise"]))
-        # print(len(final_result["praise"]))
-        # print(final_result["praise"][0])
-        # print(' '.join(final_result["praise"].encode("utf-8")))
-        ## -------------
-        ## --- rules ---
-        ## -------------
-
-        # print("#"*50)
-        # print(df_totalscore_new)
-        # print(df_totalscore)
-        # print("@"*50)
 
 
-        df_copy_cons = df_copy.copy(deep=True)
-        # print(df_copy_cons)
+        ## ------------------------------
+        ## ------ select cons item ------ 
+        ## ------------------------------
 
-        all_cons = []
-        if len(self.group_cons_1) > 0:
-            all_cons.append(self.group_cons_1)
-        if len(self.group_cons_2_level_1)> 0:
-            all_cons.append(self.group_cons_2_level_1)
-        if len(self.group_cons_3)> 0:
-            all_cons.append(self.group_cons_3) 
-        if len(self.group_cons_4_level_1)> 0:
-            all_cons.append(self.group_cons_4_level_1)
-        # if len(self.group_pros)> 0:
-        #     all_cons.append(self.group_pros)
+        df_copy_cons = df_copy.copy(deep=True)  ## DataFrame that except selected 2 praise items
+        # df_copy_cons.to_csv("/app/instances/df_copy_cons.csv", sep='\t', encoding='utf-8')
+        df_copy_cons.to_csv("./instances/df_copy_cons.csv", sep='\t', encoding='utf-8')  #deldel
+        #### ------------------------------------------------------------------------------ #deldel
+        randflag = 1
+        #### ------------------------------------------------------------------------------
 
-        all_cons_level_1 = self.group_cons_1 + self.group_cons_2_level_1 + self.group_cons_3 + self.group_cons_4_level_1
-
-        #print(all_cons, all_cons_level_1)
-        #print("$"*30)
-        #print(df_copy_cons)
-
-        count_cons = 0
-        while 1:
-            # print(("-"*20+ " Cons ~ level {} "+ "-"*20).format(i))
-            # print(df_copy_cons[all_cons_level_1])
-            if count_cons > len(all_cons):
-                break
-
-            group_min_head = df_copy_cons[all_cons_level_1].min().idxmin()
-            # print("-"*50,group_min_head)
-            # print(df_copy_cons[group_min_head])
+        if len(self.cols_1) > 0:
+            # print("group 1"*10)
+            # print(df_copy_cons[self.group_cons_1])
+            group_min_head = df_copy_cons[self.cols_1].min().idxmin()
+            #### ------------------------------------------------------------------------------ #deldel
+            if randflag==1:
+                chosenmb = math.ceil(len(self.cols_1)/5+1)
+                mngroup = list(df_copy_cons[self.cols_1].min().nsmallest(chosenmb).index.values)
+                group_min_head = random.sample(mngroup,1)[0]
+            #### ------------------------------------------------------------------------------
             group_min_idx = df_copy_cons[group_min_head].idxmin()
             group_min_val = df_copy_cons.loc[group_min_idx,group_min_head]
             group_min_loc = df_copy_cons.loc[group_min_idx,"0_name"]
 
-            ## Delete Group and the row
-            all_cons_level_1, all_cons = delete_group(group_min_head, all_cons)
-            df_copy_cons = df_copy_cons.drop(group_min_idx, axis=0)
-            if group_min_val < 0.9:
+            if 1:
                 final_result[str(self.class_all[group_min_head])].append({group_min_head:group_min_loc})
-                count_cons += 1
+                df_copy_cons = df_copy_cons.drop(group_min_idx, axis=0)
 
 
-        # group_pros 
-        # print(self.group_pros)
-        if len(self.group_pros) > 0 :
-            all_pros = self.group_pros
-            # all_pros.append(group_pros_1)
-            # all_pros.append(group_pros_3)
-
-            all_pros_level_1 = self.group_pros
-            # print(all_pros_level_1)
-
-            # len_pros = len(all_pros)
-            len_pros = 1
-            # print(df_copy_cons)
-
-            if df_copy_cons.shape[0] >= len_pros:
-                for i in range(len_pros):
-                    # print(df_copy_cons.columns)
-                    # print(df_copy_cons[all_pros_level_1])
-                    # print(("-"*20+ " Pros ~ level {} "+ "-"*20).format(i))
-
-                    group_max_head = df_copy_cons[all_pros_level_1].max().idxmax()
-                    group_max_idx = df_copy_cons[group_max_head].idxmax()
-                    group_max_val = df_copy_cons.loc[group_max_idx,group_max_head]
-                    group_max_loc = df_copy_cons.loc[group_max_idx,"0_name"]
-
-
-                    ## Delete Group and the row
-                    all_pros_level_1, all_pros= delete_group(group_max_head, all_pros)
-                    df_copy_cons = df_copy_cons.drop(group_max_idx, axis=0)
-                    print(str(self.class_all[group_max_head]))
-                    print(group_max_head)
-                    print(group_max_loc)
-                    if group_max_val > 0.95:
-                        final_result[str(self.class_all[group_max_head])].append({group_max_head:group_max_loc})
+        if len(self.cols_2) > 0:
+            choice_num =2
+            count_cons_2 = choice_num
+            df_copy_cons_2 = df_copy_cons[self.cols_2]
+            length_df = df_copy_cons_2.shape[0]
+            if length_df > choice_num:
+                for_num = choice_num
+            else:
+                for_num = length_df
+            for cc in range(for_num):
+                if len(df_copy_cons_2.columns)>0:                    
+                    group_min_head = df_copy_cons_2.min().idxmin()
+                    #### ------------------------------------------------------------------------------ #deldel
+                    if randflag==1:
+                        chosenmb = math.ceil(len(self.group_cons_2)/5+1)
+                        mngroup = list(df_copy_cons_2.min().nsmallest(chosenmb).index.values)
+                        group_min_head = random.sample(mngroup,1)[0]
+                    #### ------------------------------------------------------------------------------
+                    group_min_idx = df_copy_cons[group_min_head].idxmin()
+                    group_min_val = df_copy_cons.loc[group_min_idx,group_min_head]
+                    group_min_loc = df_copy_cons.loc[group_min_idx,"0_name"]
+                    if cc < count_cons_2:
+                        final_result[str(self.class_all[group_min_head])].append({group_min_head:group_min_loc})
+                        df_copy_cons = df_copy_cons.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(columns=group_min_head)
 
 
+        if len(self.cols_3) > 0:
+            choice_num =1
+            count_cons_2 = choice_num
+            df_copy_cons_2 = df_copy_cons[self.cols_3]
+            length_df = df_copy_cons_2.shape[0]
+            if length_df > choice_num:
+                for_num = choice_num
+            else:
+                for_num = length_df
+            for cc in range(for_num):
+                if len(df_copy_cons_2.columns)>0:
+                    # df_copy_cons_2.to_csv("/home/hx/Documents/hx_test/df_copy_cons33_" + str(cc) + ".csv", sep='\t', encoding='utf-8')
+                    group_min_head = df_copy_cons_2.min().idxmin()
+                    #### ------------------------------------------------------------------------------ #deldel
+                    if randflag==1:
+                        chosenmb = math.ceil(len(self.group_cons_3)/5+1)
+                        mngroup = list(df_copy_cons_2.min().nsmallest(chosenmb).index.values)
+                        group_min_head = random.sample(mngroup,1)[0]
+                    #### ------------------------------------------------------------------------------
+                    group_min_idx = df_copy_cons[group_min_head].idxmin()
+                    group_min_val = df_copy_cons.loc[group_min_idx,group_min_head]
+                    group_min_loc = df_copy_cons.loc[group_min_idx,"0_name"]
+                    if cc < count_cons_2:
+                        final_result[str(self.class_all[group_min_head])].append({group_min_head:group_min_loc})
+                        df_copy_cons = df_copy_cons.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(columns=group_min_head)
 
-        # if len(group_pros_1) > 0 or len(group_pros_3) > 0:
-        #     all_pros = []
-        #     all_pros.append(group_pros_1)
-        #     all_pros.append(group_pros_3)
+        if len(self.cols_4) > 0:
+            choice_num =1
+            count_cons_2 = choice_num
+            df_copy_cons_2 = df_copy_cons[self.cols_4]
+            length_df = df_copy_cons_2.shape[0]
+            if length_df > choice_num:
+                for_num = choice_num
+            else:
+                for_num = length_df
+            for cc in range(for_num):
+                if len(df_copy_cons_2.columns)>0:
+                    # df_copy_cons_2.to_csv("/home/hx/Documents/hx_test/df_copy_cons33_" + str(cc) + ".csv", sep='\t', encoding='utf-8')
+                    group_min_head = df_copy_cons_2.min().idxmin()
+                    #### ------------------------------------------------------------------------------ #deldel
+                    if randflag==1:
+                        chosenmb = math.ceil(len(self.group_cons_4)/5+1)
+                        mngroup = list(df_copy_cons_2.min().nsmallest(chosenmb).index.values)
+                        group_min_head = random.sample(mngroup,1)[0]
+                    #### ------------------------------------------------------------------------------
+                    group_min_idx = df_copy_cons[group_min_head].idxmin()
+                    group_min_val = df_copy_cons.loc[group_min_idx,group_min_head]
+                    group_min_loc = df_copy_cons.loc[group_min_idx,"0_name"]
+                    if cc < count_cons_2:
+                        final_result[str(self.class_all[group_min_head])].append({group_min_head:group_min_loc})
+                        df_copy_cons = df_copy_cons.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(group_min_idx, axis=0)
+                        df_copy_cons_2 = df_copy_cons_2.drop(columns=group_min_head)
 
-        #     all_pros_level_1 = group_pros_1 + group_pros_3
 
-        #     len_pros = len(all_pros)
-
-        #     if df_copy_cons.shape[0] >= len_pros:
-        #         for i in range(len_pros):
-        #             # print(("-"*20+ " Pros ~ level {} "+ "-"*20).format(i))
-
-        #             group_max_head = df_copy_cons[all_pros_level_1].max().idxmax()
-        #             group_max_idx = df_copy_cons[group_max_head].idxmax()
-        #             group_max_val = df_copy_cons.loc[group_max_idx,group_max_head]
-        #             group_max_loc = df_copy_cons.loc[group_max_idx,"0_name"]
-
-
-        #             ## Delete Group and the row
-        #             all_pros_level_1, all_pros= delete_group(group_max_head, all_pros)
-        #             df_copy_cons = df_copy_cons.drop(group_max_idx, axis=0)
-        #             if group_max_val > 0.95:
-        #                 final_result[str(class_all[group_max_head])].append({group_max_head:group_max_loc})
-
-        # final_result["praise"] = whole_praise
-
-        # print(final_result)
         return final_result
 
 
     ## --------------------------------------------------------------
 
-
-
-
     def final_rule(self,js_list):
-        print("^"*20)
+        # print("^"*20)
         # print(js_list)
 
         # df = main_chuan(js_list)
@@ -437,31 +425,25 @@ class final_rule:
         #print(df)
         result_json = self.process_cons_pros(df)
         # print("&"*50)
-        #print(result_json)
+        # print(result_json)
 
         result = collections.OrderedDict()
+        result_praise = collections.OrderedDict()
 
         praise_part = result_json["praise"]
-        # print("result: ",result)
-
-        # print("result_json: ",result_json)
-        # print("praise_part,result_json['praise']:",praise_part)
+        # print("praise_part: ",praise_part)
 
 
         for p in praise_part:
-            # print(list(p.values()))
+            result_praise[list(p.values())[0]] = self.name_d[list(p.keys())[0]]
+        result["kj"] = result_praise
 
-            result[list(p.values())[0]] = self.name_d[list(p.keys())[0]]
 
-
-        for p in ["1", "2", "3", "4", "5"]:
+        for p in ["1", "2", "2", "2", "3", "4", "5"]:
             if len(result_json[p]) > 0:
                 rand_idx = random.randint(0,len(result_json[p])-1)
                 rand_result = result_json[p][rand_idx]
                 result[list(rand_result.values())[0]] = self.name_d[list(rand_result.keys())[0]]
 
-
-                # result[rand_result.values()[0]] = self.name_d[rand_result.keys()[0]]
-
-
+        # print(result)
         return result

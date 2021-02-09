@@ -3,14 +3,14 @@ import numpy as np
 import math
 import functools
 import nudged
-from scipy import optimize
-import matplotlib.pyplot as plt
-import matplotlib.image as imgplt
-from matplotlib import font_manager
+from scipy import optimize,special
+# import matplotlib.pyplot as plt
+# import matplotlib.image as imgplt
+# from matplotlib import font_manager
 from vis_tools import getXY,get_ellipse
 from vis_tools import Line,Ellipese,Circle,Visualize
 from itertools import combinations
-font = font_manager.FontProperties(fname='1234.ttf', size=6)
+# font = font_manager.FontProperties(fname='1234.ttf', size=6)
 
 epsilon = 1e-5
 # color_l = ['blue','cyan','yellow','lawngreen','fuchsia','darkred','darkviolet','darkorange']
@@ -367,25 +367,6 @@ def unload_datan(data_list):
     return dim_key_l,data,dim_CN_l
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # check
 class evaluate_len:
     """[summary]
@@ -477,11 +458,40 @@ class evaluate_len_single:
             v_eg_len_ = vec_len(v_eg)
 
             len_ratio = v_len_ / (v_eg_len_+epsilon)
-            if len_ratio<0.2:
-                len_ratio = 0
-            score_l.append(len_ratio)
-
-
+            oldcalflag = 1
+            if oldcalflag == 0:
+                if len_ratio<0.2:
+                    len_ratio = 0
+                score_l.append(len_ratio)
+            #### -----------------------------------------------------#del
+            else:
+                if 0 < len_ratio <= 0.01:
+                    resusingle = special.expit(len_ratio*6-1.5)
+                elif 0.01 < len_ratio <= 0.02:
+                    resusingle = special.expit(len_ratio*7-1.1)
+                elif 0.02 < len_ratio <= 0.03:
+                    resusingle = special.expit(len_ratio*8-1)
+                elif 0.03 < len_ratio <= 0.04:
+                    resusingle = special.expit(len_ratio*8-0.95)
+                elif 0.04 < len_ratio <= 0.05:
+                    resusingle = special.expit(len_ratio*9-0.95)
+                elif 0.05 < len_ratio <= 0.06:
+                    resusingle = special.expit(len_ratio*9-0.9)
+                elif 0.06 < len_ratio <= 0.07:
+                    resusingle = special.expit(len_ratio*10-0.9)
+                elif 0.07 < len_ratio <= 0.08:
+                    resusingle = special.expit(len_ratio*10-0.85)
+                elif 0.08 < len_ratio <= 0.09:
+                    resusingle = special.expit(len_ratio*11-0.85)
+                elif 0.09 < len_ratio <= 0.10:
+                    resusingle = special.expit(len_ratio*11-0.8)
+                elif 0.10 < len_ratio <= 0.20:
+                    resusingle = special.expit(len_ratio*12-1.8)
+                else:
+                    resusingle = len_ratio
+                score_l.append(resusingle)
+            #### -----------------------------------------------------
+            
             # xx,yy=getXY(point_list)
             # l.xs_line.append(xx)
             # l.ys_line.append(yy)
@@ -523,7 +533,7 @@ class evaluate_slope_tx:
             plot_point_l = ele[2]
 
             trans = nudged.estimate(point_list,eg_point_list)
-            rotate = trans.get_rotation() * 180 / math.pi
+            rotate = trans.get_rotation() * 180 / math.pi 
             score_l.append(rotate)
 
             
@@ -579,9 +589,16 @@ class evaluate_slope_pp:
             eg_point_list_manual = [[i, 0] for i in eg_x_l]
 
             trans = nudged.estimate(point_list, eg_point_list_manual)
-            rotate = trans.get_rotation() * 180 / math.pi
+            rotate = trans.get_rotation() * 180 / math.pi 
 
-            score_l.append(rotate)
+            # score_l.append(rotate)
+            ####------------------------------------#deldel
+            if abs(rotate) < 5:
+                resu = rotate
+            else:
+                resu = abs(rotate)
+            score_l.append(resu)
+            ####------------------------------------
 
             # xx,yy=getXY(plot_point_l)
             # l.xs_line.append(xx)
@@ -629,7 +646,7 @@ class evaluate_slope_cz:
             eg_point_list_manual = [[0, i] for i in eg_y_l]
 
             trans = nudged.estimate(point_list, eg_point_list_manual)
-            rotate = trans.get_rotation() * 180 / math.pi
+            rotate = trans.get_rotation() * 180 / math.pi 
 
             score_l.append(rotate)
 
@@ -643,7 +660,60 @@ class evaluate_slope_cz:
 
 
 
-        # return dim_key_l,score_l
+####===============================================================================================================deldel
+class evaluate_slope_sz:
+    """[summary]
+    判断笔画竖直,      绝对值
+    
+    计算的使笔画与对垂直线拟合的角度
+    
+
+    p_slope_d:    由维度和相应的点构成的字典样式的列表
+
+    Returns:
+        score_l: 所有计算的斜率的值构成的列表　，例：[100.11,50.233]
+    """
+
+    def __init__(self, p_slope_d, p_Transed_l,eg_p_l,p_l):
+
+        self.p_slope_d = p_slope_d
+        self.p_Transed_l = p_Transed_l
+        self.eg_p_l = eg_p_l
+        self.p_l = p_l
+
+    def calculate_dim(self):
+
+        dim_key_l, point_l_l, dim_CN_l = unload_data3(self.p_slope_d)
+
+        # print('*' * 100)
+        score_l = []
+        for idx, ele in enumerate(point_l_l):
+            point_list = ele[0]
+            eg_point_list = ele[1]
+            plot_point_l = ele[2]
+
+            len_point_l = len(point_list)
+            eg_y_l = np.arange(50, 550 // len_point_l)
+            eg_y_l = eg_y_l[-len_point_l:]
+            eg_point_list_manual = [[0, i] for i in eg_y_l]
+
+            trans = nudged.estimate(point_list, eg_point_list_manual)
+            rotate = trans.get_rotation() * 180 / math.pi 
+            
+            if abs(rotate) < 5:
+                resu = rotate
+            else:
+                resu = abs(rotate)
+            score_l.append(resu)
+
+            # xx,yy=getXY(point_list)
+            # l.xs_line.append(xx)
+            # l.ys_line.append(yy)
+            # l.marks_line.append('b-')
+            # l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(rotate))
+
+        return dim_key_l,score_l
+####===============================================================================================================
 
 
 class evaluate_angle_3points:
@@ -707,7 +777,7 @@ class evaluate_angle_3points:
             eg_vec23 = vec(eg_p2,eg_p3)
             
 
-            if vec_len(vec12)/vec_len(eg_vec12)<0.5 or vec_len(vec23)/vec_len(eg_vec23)<0.5:
+            if vec_len(vec12)/vec_len(eg_vec12)<0.4  or vec_len(vec23)/vec_len(eg_vec23)<0.4 :
                 ang = 0
 
             ang_ratio = ang / (eg_ang + epsilon)
@@ -1462,7 +1532,7 @@ class evaluate_2angle_3points:
             eg_vec12 = vec(eg_p1, eg_p2)
             eg_vec23 = vec(eg_p2, eg_p3)
 
-            if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+            if vec_len(vec12) / vec_len(eg_vec12) < 0.4  or vec_len(vec23) / vec_len(eg_vec23) < 0.4 :
                 ang = 0
 
             ang_ratio1 = ang / (eg_ang + epsilon)
@@ -1519,13 +1589,19 @@ class evaluate_2angle_3points:
             eg_vec12 = vec(eg_p1, eg_p2)
             eg_vec23 = vec(eg_p2, eg_p3)
 
-            if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+            if vec_len(vec12) / vec_len(eg_vec12) < 0.4  or vec_len(vec23) / vec_len(eg_vec23) < 0.4 :
                 ang = 0
 
             ang_ratio2 = ang / (eg_ang + epsilon)
 
 
-            score_l.append(min(ang_ratio1,ang_ratio2))
+            # score_l.append(min(ang_ratio1,ang_ratio2))
+            if min(ang_ratio1,ang_ratio2) < 0.1:
+                resretu = 0
+            else:
+                resretu = (ang_ratio1+ang_ratio2)/2
+
+            score_l.append(resretu) ##deldel
 
             # if vis_ornot:
             #     xx, yy = getXY([p1, p2, p3])
@@ -1628,7 +1704,7 @@ class evaluate_word_polygon:
             
             # 对点的索引值进行 C_n 2组合
             combin_idx_l = list(combinations(ele,2))
-            print(combin_idx_l)
+            # print(combin_idx_l)
             vec_l = [vec(self.p_Trans_l[i[0]],self.p_Trans_l[i[1]]) for i in combin_idx_l]
             vec_len_l = [vec_len(i) for i in vec_l]
 
@@ -1694,7 +1770,7 @@ class evaluate_nline_parallel:
             # for idx, ele  in enumerate(point_l[0]):
             for i in range(length2):
                 trans = nudged.estimate(point_list1[i],eg_point_list1[i])
-                rotate = trans.get_rotation() * 180 / math.pi  # 弧度转化为角度，180度/π是1弧度对应多少度,
+                rotate = trans.get_rotation() * 180 / math.pi   # 弧度转化为角度，180度/π是1弧度对应多少度,
                 score_l_among.append(rotate)
 
                 # if vis_ornot:
@@ -2415,7 +2491,7 @@ class evaluate_2line_parallel:
 
             trans = nudged.estimate(point_list1,point_list_2)
 
-            rotate = trans.get_rotation() * 180 / math.pi
+            rotate = trans.get_rotation() * 180 / math.pi 
 
             score_l.append(rotate)
 
@@ -2538,7 +2614,8 @@ class evaluate_double_aware:
             stroke2_len_ratio = v_len_ / (v_eg_len_ + epsilon)
 
 
-            score_l.append(min(stroke1_len_ratio,stroke2_len_ratio))
+            # score_l.append(min(stroke1_len_ratio,stroke2_len_ratio))
+            score_l.append((stroke1_len_ratio + stroke2_len_ratio)/2) #deldel
 
             # xx, yy = getXY(stroke1_points)
             # l.xs_line.append(xx)
@@ -2610,7 +2687,8 @@ class evaluate_double_sleep:
 
             stroke2_len_ratio = v_len_ / (v_eg_len_ + epsilon)
 
-            score_l.append(max(stroke1_len_ratio, stroke2_len_ratio))
+            # score_l.append(max(stroke1_len_ratio, stroke2_len_ratio))
+            score_l.append((stroke1_len_ratio + stroke2_len_ratio)/2) #deldel
 
 
             # xx, yy = getXY(stroke1_points)
@@ -2988,7 +3066,8 @@ class evaluate_len_with_curve:
 
 
 
-
+##### =======================================================================================================
+##### =======================================================================================================
 # # class -> func
 
 # check
@@ -3016,10 +3095,7 @@ def evaluate_pos_func(p_pos_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
         l.reviews_line.append(dim_CN_l[idx]+("%.3f"%pos_dif))
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_angle_3points_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """[summary]
     判断两个笔画间的角度,夹角上凹(可能会大于180度),     相对值   
@@ -3073,7 +3149,7 @@ def evaluate_angle_3points_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
         eg_vec23 = vec(eg_p2,eg_p3)
         
 
-        if vec_len(vec12)/vec_len(eg_vec12)<0.3 or vec_len(vec23)/vec_len(eg_vec23)<0.3:
+        if vec_len(vec12)/vec_len(eg_vec12)<0.4  or vec_len(vec23)/vec_len(eg_vec23)<0.4 :
             ang = 0
 
         ang_ratio = ang / (eg_ang + epsilon)
@@ -3099,10 +3175,7 @@ def evaluate_angle_3points_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
             l.reviews_line.append(dim_CN_l[idx]+' 角度比值: '+str(ang_ratio))
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_curve_func(p_curve_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
     """
     判断笔画弯曲
@@ -3178,10 +3251,7 @@ def evaluate_curve_func(p_curve_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
             l.reviews_line.append('dis_mean: '+("%.3f"%dis_mean))            
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_word_pos_func(p_word_pos_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """
     判断字整体位置是否写在格子内
@@ -3250,11 +3320,7 @@ def evaluate_word_pos_func(p_word_pos_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     
 
     return dim_key_l,score_l
-
-
-
-
-
+##### =======================================================================================================
 def evaluate_len_func(p_len_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """[summary]
     判断笔画长度, 相对值
@@ -3297,10 +3363,7 @@ def evaluate_len_func(p_len_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
 
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_slope_cz_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """[summary]
     判断笔画垂直,      绝对值
@@ -3328,7 +3391,7 @@ def evaluate_slope_cz_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
         eg_point_list_manual = [[0, i] for i in eg_y_l]
 
         trans = nudged.estimate(point_list, eg_point_list_manual)
-        rotate = trans.get_rotation() * 180 / math.pi
+        rotate = trans.get_rotation() * 180 / math.pi 
 
         score_l.append(rotate)
 
@@ -3346,10 +3409,57 @@ def evaluate_slope_cz_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
             l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(rotate))
 
     return dim_key_l,score_l
+####===============================================================================================================deldel
+def evaluate_slope_sz_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
+    """[summary]
+    判断笔画竖直,      绝对值
+    
+    计算的使笔画与对垂直线拟合的角度
+    
 
+    p_slope_d:    由维度和相应的点构成的字典样式的列表
 
+    Returns:
+        score_l: 所有计算的斜率的值构成的列表　，例：[100.11,50.233]
+    """
+    dim_key_l, point_l_l, dim_CN_l = unload_data3(p_slope_d)
 
+    # print('*' * 100)
+    score_l = []
+    for idx, ele in enumerate(point_l_l):
+        point_list = ele[0]
+        eg_point_list = ele[1]
+        plot_point_l = ele[2]
 
+        len_point_l = len(point_list)
+        eg_y_l = np.arange(50, 550 // len_point_l)
+        eg_y_l = eg_y_l[-len_point_l:]
+        eg_point_list_manual = [[0, i] for i in eg_y_l]
+
+        trans = nudged.estimate(point_list, eg_point_list_manual)
+        rotate = trans.get_rotation() * 180 / math.pi 
+        
+        if abs(rotate) < 5:
+            resu = rotate
+        else:
+            resu = abs(rotate)
+        score_l.append(resu)
+
+        # xx,yy=getXY(point_list)
+        # l.xs_line.append(xx)
+        # l.ys_line.append(yy)
+        # l.marks_line.append('b-')
+        # l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(rotate))
+
+        if vis_ornot :
+            xx,yy=getXY(point_list)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('b-')
+            l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(resu))
+
+    return dim_key_l,score_l
+####===============================================================================================================
 def evaluate_slope_tx_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
     """    
     判断笔画斜率太斜,斜率不准    相对值
@@ -3373,7 +3483,7 @@ def evaluate_slope_tx_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
         plot_point_l = ele[2]
 
         trans = nudged.estimate(point_list,eg_point_list)
-        rotate = trans.get_rotation() * 180 / math.pi
+        rotate = trans.get_rotation() * 180 / math.pi 
         score_l.append(rotate)
 
         if vis_ornot :
@@ -3390,10 +3500,7 @@ def evaluate_slope_tx_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
             l.reviews_line.append('')            
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_len_single_func(p_len_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
     """[summary]
     由两点构成的笔画的长度，比如顿笔    相对值
@@ -3422,27 +3529,57 @@ def evaluate_len_single_func(p_len_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
         v_eg_len_ = vec_len(v_eg)
 
         len_ratio = v_len_ / (v_eg_len_+epsilon)
-        if len_ratio<0.2:
-            len_ratio = 0        
-        score_l.append(len_ratio)
-
+        oldcalflag = 1
+        if oldcalflag == 0:
+            if len_ratio<0.2:
+                len_ratio = 0
+            score_l.append(len_ratio)
+        #### -----------------------------------------------------#del
+        else:
+            if 0 < len_ratio <= 0.01:
+                resusingle = special.expit(len_ratio*6-1.5)
+            elif 0.01 < len_ratio <= 0.02:
+                resusingle = special.expit(len_ratio*7-1.1)
+            elif 0.02 < len_ratio <= 0.03:
+                resusingle = special.expit(len_ratio*8-1)
+            elif 0.03 < len_ratio <= 0.04:
+                resusingle = special.expit(len_ratio*8-0.95)
+            elif 0.04 < len_ratio <= 0.05:
+                resusingle = special.expit(len_ratio*9-0.95)
+            elif 0.05 < len_ratio <= 0.06:
+                resusingle = special.expit(len_ratio*9-0.9)
+            elif 0.06 < len_ratio <= 0.07:
+                resusingle = special.expit(len_ratio*10-0.9)
+            elif 0.07 < len_ratio <= 0.08:
+                resusingle = special.expit(len_ratio*10-0.85)
+            elif 0.08 < len_ratio <= 0.09:
+                resusingle = special.expit(len_ratio*11-0.85)
+            elif 0.09 < len_ratio <= 0.10:
+                resusingle = special.expit(len_ratio*11-0.8)
+            elif 0.10 < len_ratio <= 0.20:
+                resusingle = special.expit(len_ratio*12-1.8)
+            else:
+                resusingle = len_ratio
+            score_l.append(resusingle)
+        #### -----------------------------------------------------
+        try:
+            visres = resusingle
+        except :
+            visres = len_ratio
         if vis_ornot :
             xx,yy=getXY(point_list)
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx]+' 长度比率: '+str(len_ratio))
+            l.reviews_line.append(dim_CN_l[idx]+' 长度比率 len_ratio: '+str(len_ratio))
 
             xx,yy=getXY(eg_point_list)
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('r-')
-            l.reviews_line.append(dim_CN_l[idx]+' 长度比率: '+str(len_ratio))            
+            l.reviews_line.append(dim_CN_l[idx]+' 长度比率: '+str(visres))            
 
     return dim_key_l,score_l
-
-
-
 # ===========================================================
 def evaluate_slope_pp_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """[summary]
@@ -3471,9 +3608,17 @@ def evaluate_slope_pp_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
         eg_point_list_manual = [[i, 0] for i in eg_x_l]
 
         trans = nudged.estimate(point_list, eg_point_list_manual)
-        rotate = trans.get_rotation() * 180 / math.pi
+        rotate = trans.get_rotation() * 180 / math.pi 
 
-        score_l.append(rotate)
+        # score_l.append(rotate)
+        ####------------------------------------#deldel 12
+        if abs(rotate) < 5:
+            resu = rotate
+        else:
+            resu = abs(rotate)
+        score_l.append(resu)
+        ####------------------------------------
+
 
         if vis_ornot :
             xx,yy=getXY(plot_point_l)
@@ -3486,18 +3631,10 @@ def evaluate_slope_pp_func(p_slope_d, p_Transed_l,eg_p_l,p_l,vis_ornot ):
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('r-')
-            l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(rotate))            
+            l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+str(abs(resu)))            
 
     return dim_key_l,score_l
-
-
-
-
-
-
-
-
-
+##### =======================================================================================================
 def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """两条拟合的直线的夹角"""
 
@@ -3595,9 +3732,7 @@ def evaluate_angle_2lines_func(p_ang_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
             l.reviews_line.append('')
 
     return dim_key_l,score_l
-
-
-
+##### =======================================================================================================
 def evaluate_gap_multi_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """
     判断多个笔画的所有间距是否均等
@@ -3631,9 +3766,7 @@ def evaluate_gap_multi_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
             l.reviews_line.append(dim_CN_l[idx]+' gap比率: '+("%.3f"%gap_dif_max))
 
     return dim_key_l,score_list
-
-
-
+##### =======================================================================================================
 def evaluate_radian_func(p_radian_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """计算笔画的弧度值
 
@@ -3680,12 +3813,30 @@ def evaluate_radian_func(p_radian_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
         score_l.append(ratio)
 
         if vis_ornot :
-            for i in p_Transed_l[21:26]:
-                xx,yy=getXY([i])
-                l.xs_line.append(xx)
-                l.ys_line.append(yy)
-                l.marks_line.append('b.')
-                l.reviews_line.append(dim_CN_l[idx]+'  dis_mean比率: '+("%.3f"%ratio))
+
+            # ---------------------------------------------------------------- deldel
+            xx,yy=getXY(points_list)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append(color_l[idx])
+            l.reviews_line.append(dim_CN_l[idx]+' 弧度: '+str(ratio))
+           
+            xx,yy=getXY(eg_points_list)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('r-')
+            l.reviews_line.append(dim_CN_l[idx]+' 弧度: '+str(ratio))    
+            # -----------------------------------------------------------------------------
+
+
+
+
+            # for i in p_Transed_l[21:26]:
+            #     xx,yy=getXY([i])
+            #     l.xs_line.append(xx)
+            #     l.ys_line.append(yy)
+            #     l.marks_line.append('b.')
+            #     l.reviews_line.append(dim_CN_l[idx]+'  dis_mean比率: '+("%.3f"%ratio))
 
             p_x_l = []
             p_y_l = []
@@ -3709,16 +3860,18 @@ def evaluate_radian_func(p_radian_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
             c.marks_circle.append('r--')
             c.reviews_circle.append('')
 
-            xx,yy=getXY([p_1,p_500])
+            xx,yy=getXY([i])    ## deldel
+            # xx,yy=getXY([p_1,p_500])
+            # points_l_l
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx]+'  dis_mean比率: '+("%.3f"%dis_mean_ratio))            
+            l.reviews_line.append(dim_CN_l[idx]+'  dis_mean比率: '+("%.3f"%ratio))            
 
 
 
     return dim_key_l,score_l
-
+##### =======================================================================================================
 def evaluate_symmetry_func(p_sym_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
     """计算笔画对称性，例：尘字的左右两点是否关于中间竖对称"""
     dim_sym_score_l = []
@@ -3818,9 +3971,7 @@ def evaluate_symmetry_func(p_sym_d,p_Transed_l,eg_p_l,p_l,vis_ornot ):
                 l.reviews_line.append('x_r: {}, y_r: {}'.format(self.p_l[5:9][i][0],self.p_l[5:9][i][1]))            
 
     return dim_key_l,score_l
-
-
-
+##### =======================================================================================================
 def evaluate_2parts_size_ratio_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """
     判断字的两个组成部分的大小比例
@@ -3868,8 +4019,7 @@ def evaluate_2parts_size_ratio_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
 
     return dim_key_l,score_l
-
-
+##### =======================================================================================================
 def evaluate_2line_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
     """    
     判断笔画斜率太斜,斜率不准    相对值
@@ -3903,7 +4053,7 @@ def evaluate_2line_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot )
 
         trans = nudged.estimate(point_list1,point_list_2)
 
-        rotate = trans.get_rotation() * 180 / math.pi
+        rotate = trans.get_rotation() * 180 / math.pi 
 
         score_l.append(rotate)
 
@@ -3923,8 +4073,7 @@ def evaluate_2line_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot )
             l.reviews_line.append('')            
 
     return dim_key_l,score_l
-
-
+##### =======================================================================================================
 def evaluate_location_func(p_location_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
 
     score_l = []
@@ -3955,9 +4104,7 @@ def evaluate_location_func(p_location_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
 
         score_l.append(out)
     return dim_key_l, score_l
-
-
-
+##### =======================================================================================================
 def evaluate_2stroke_start_pos_func(p_len_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     # 左低右高
     score_l = []
@@ -3993,7 +4140,7 @@ def evaluate_2stroke_start_pos_func(p_len_d, p_Transed_l, eg_p_l, p_l,vis_ornot)
             l.reviews_line.append(dim_CN_l[idx]+' 两个笔画最高点的Y值差与范字的比值: '+("%.3f"%start_pos_r))
 
     return dim_key_l,score_l    
-
+##### =======================================================================================================
 def evaluate_double_aware_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
     """[summary]
     由两点构成的笔画的长度，比如顿笔    相对值
@@ -4042,7 +4189,9 @@ def evaluate_double_aware_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
         stroke2_len_ratio = v_len_ / (v_eg_len_ + epsilon)
 
 
-        score_l.append(min(stroke1_len_ratio,stroke2_len_ratio))
+        # score_l.append(min(stroke1_len_ratio,stroke2_len_ratio))
+        score_l.append((stroke1_len_ratio + stroke2_len_ratio)/2) #deldle
+
 
 
 
@@ -4051,17 +4200,16 @@ def evaluate_double_aware_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str(score_l[-1]))
+            l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str((stroke1_len_ratio + stroke2_len_ratio)/2))
 
-            # xx, yy = getXY(stroke2_points)
-            # l.xs_line.append(xx)
-            # l.ys_line.append(yy)
-            # l.marks_line.append('r-')
-            # l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str(stroke2_len_ratio))
+            xx, yy = getXY(stroke2_points)
+            l.xs_line.append(xx)
+            l.ys_line.append(yy)
+            l.marks_line.append('r-')
+            # l.reviews_line.append(dim_CN_l[idx] + ' 长度比率2: ' + str(stroke2_len_ratio))
 
     return dim_key_l, score_l
-
-
+##### =======================================================================================================
 def evaluate_double_sleep_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
     """[summary]
     由两点构成的笔画的长度，比如顿笔    相对值
@@ -4110,14 +4258,16 @@ def evaluate_double_sleep_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
 
         stroke2_len_ratio = v_len_ / (v_eg_len_ + epsilon)
 
-        score_l.append(max(stroke1_len_ratio, stroke2_len_ratio))
+        # score_l.append(max(stroke1_len_ratio, stroke2_len_ratio))
+        score_l.append((stroke1_len_ratio + stroke2_len_ratio)/2) #deldel
+
 
         if vis_ornot:
             xx, yy = getXY(stroke1_points)
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str(score_l[-1]))
+            l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str((stroke1_len_ratio + stroke2_len_ratio)/2))
 
             # xx, yy = getXY(stroke2_points)
             # l.xs_line.append(xx)
@@ -4126,74 +4276,6 @@ def evaluate_double_sleep_func(p_len_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
             # l.reviews_line.append(dim_CN_l[idx] + ' 长度比率: ' + str(stroke2_len_ratio))
 
     return dim_key_l, score_l
-
-
-
-# def evaluate_nline_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
-#     """
-#     判断笔画斜率太斜,斜率不准    相对值
-#     计算 构成笔画的实际的点 拟合到范字相应的点 得到的旋转角度
-
-#     p_slope_d:    由维度和相应的点构成的字典样式的列表
-
-#     Returns:
-#         score_l: 所有计算的斜率的值构成的列表
-#     """
-#     dim_key_l = []
-#     score_l = []
-#     length = len(p_slope_d)
-#     for i in range(length):
-#         length1 = len(p_slope_d[i])
-
-#         slope_dif_l = []
-#         slope_l = []
-#         score_l_among = []
-
-#         point_l = []
-#         point_list1 = []
-#         eg_point_list1 = []
-#         plot_point_l1 = []
-#         point_list2 = []
-#         eg_point_list2 = []
-#         plot_point_l2 = []
-       
-
-#         dim_key, ll, dim_CN_l = unload_datan(p_slope_d[i])
-#         dim_key_l.append(dim_key[0])
-#         for x in range(length1 - 2):
-#             point_l.append(ll[x])
-#             for idx, ele in enumerate(point_l[x]):
-#                 point_list1.append(ele[0])
-#                 eg_point_list1.append(ele[1])
-#                 plot_point_l1.append(ele[2])
-
-#         length2 = len(point_list1)
-
-#         # for idx, ele  in enumerate(point_l[0]):
-#         for i in range(length2):
-#             trans = nudged.estimate(point_list1[i],eg_point_list1[i])
-#             rotate = trans.get_rotation() * 180 / math.pi  # 弧度转化为角度，180度/π是1弧度对应多少度,
-#             score_l_among.append(rotate)
-
-#             if vis_ornot:
-#                 xx, yy = getXY(point_list1[i])
-#                 l.xs_line.append(xx)
-#                 l.ys_line.append(yy)
-#                 l.marks_line.append('b-')
-               
-        
-#         score_abs = [np.abs(i) for i in score_l_among]
-#         l.reviews_line.append(dim_CN_l[idx]+' 旋转角度: '+("%.3f"%max(score_abs)))
-#         score = max(score_abs)
-#         score_l.append(score)
-
-#     return dim_key_l, score_l
-
-
-
-
-
-
 # ======================================================================================================================================================
 def evaluate_nline_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
 
@@ -4240,7 +4322,7 @@ def evaluate_nline_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l, vis_ornot)
         # for idx, ele  in enumerate(point_l[0]):
         for i in range(length2):
             trans = nudged.estimate(point_list1[i],eg_point_list1[i])
-            rotate = trans.get_rotation() * 180 / math.pi  # 弧度转化为角度，180度/π是1弧度对应多少度,
+            rotate = trans.get_rotation() * 180 / math.pi   # 弧度转化为角度，180度/π是1弧度对应多少度,
             score_l_among.append(rotate)
 
             if vis_ornot:
@@ -4256,10 +4338,7 @@ def evaluate_nline_parallel_func(p_slope_d, p_Transed_l, eg_p_l, p_l, vis_ornot)
         score_l.append(score)
 
     return dim_key_l, score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_word_pos_V_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
     判断字的垂直方向的高低位置,
@@ -4292,9 +4371,7 @@ def evaluate_word_pos_V_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
             l.reviews_line.append('')
         
     return dim_key_l,score_l
-
-
-
+##### =======================================================================================================
 def evaluate_word_pos_H_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
     判断字的水平方向的左右位置,
@@ -4327,9 +4404,7 @@ def evaluate_word_pos_H_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
             l.reviews_line.append('')
 
     return dim_key_l,score_l
-
-
-
+##### =======================================================================================================
 def evaluate_2parts_size_ratio_discrete_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
     判断字的两个组成部分的大小比例（上收下放），可以是由离散的点组成的两部分
@@ -4414,9 +4489,7 @@ def evaluate_2parts_size_ratio_discrete_func(p_slope_d, p_Transed_l, eg_p_l, p_l
             l.reviews_line.append("")
 
     return dim_key_l, score_l
-
-
-
+##### =======================================================================================================
 def evaluate_cross_p_V_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
     判断交点垂直方向是否偏上，偏下，不准，较好
@@ -4500,8 +4573,7 @@ def evaluate_cross_p_V_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
             l.reviews_line.append("")
 
     return dim_key_l, score_l
-
-
+##### =======================================================================================================
 def evaluate_cross_p_H_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
     判断交点水平方向是否偏左，偏右，不准，较好
@@ -4581,7 +4653,7 @@ def evaluate_cross_p_H_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
             l.reviews_line.append("")
 
     return dim_key_l, score_l
-
+##### =======================================================================================================
 def evaluate_word_polygon_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """判断字的多边形形状，例：三角形，正方形，长方形，梯形，菱形，理论上n变形也可以
     
@@ -4617,10 +4689,7 @@ def evaluate_word_polygon_func(p_data_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
 
     return dim_key_l,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_word_shape_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
     """
         字的高与宽的比值shape_r与范字的高与宽的eg_shape_r的比
@@ -4666,10 +4735,7 @@ def evaluate_word_shape_func(p_data_d, p_Transed_l, eg_p_l, p_l,vis_ornot):
 
 
     return dim_key_l ,score_l
-
-
-
-
+##### =======================================================================================================
 def evaluate_gap_mutual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """判断多个笔画的所有间距之间的垂直方向间距是否均等,不等"""
 
@@ -4727,7 +4793,7 @@ def evaluate_gap_mutual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
 
     return dim_key_l,score_list
-
+##### =======================================================================================================
 def evaluate_gap_mutual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """ 判断多个笔画的所有间距之间的水平间距是否均等,不等 """
 
@@ -4786,7 +4852,7 @@ def evaluate_gap_mutual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
 
 
     return dim_key_l,score_list
-
+##### =======================================================================================================
 # check
 def evaluate_gap_individual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """
@@ -4842,7 +4908,7 @@ def evaluate_gap_individual_V_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_orno
 
 
     return dim_key_l,score_list
-
+##### =======================================================================================================
 def evaluate_gap_individual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_ornot):
     """
     判断两个笔画的水平间距是否过大，过小，较好
@@ -4897,10 +4963,7 @@ def evaluate_gap_individual_H_func(p_gap_multi_d,p_Transed_l,eg_p_l,p_l,vis_orno
 
 
     return dim_key_l,score_list
-
-
-
-
+##### =======================================================================================================
 def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
     """[summary]
     起收笔方向不准      min of two angle details from qi (begin) and shou (end) '
@@ -4955,7 +5018,7 @@ def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
         eg_vec12 = vec(eg_p1, eg_p2)
         eg_vec23 = vec(eg_p2, eg_p3)
 
-        if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+        if vec_len(vec12) / vec_len(eg_vec12) < 0.4  or vec_len(vec23) / vec_len(eg_vec23) < 0.4 :
             ang = 0
 
         ang_ratio1 = ang / (eg_ang + epsilon)
@@ -4965,13 +5028,13 @@ def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
-
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度1: ' + str(ang))
+            # dim_key_l[0].split('__')[1]
             xx, yy = getXY([eg_p1, eg_p2, eg_p3])
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('r-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
+            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度1: ' + str(eg_ang))
 
         stroke2_points = locals()['stroke2_p_l'][idx][0]
         eg_stroke2_points = locals()['stroke2_p_l'][idx][1]
@@ -5012,39 +5075,44 @@ def evaluate_2angle_3points_func(p_ang_d, p_Transed_l, eg_p_l, p_l, vis_ornot):
         eg_vec12 = vec(eg_p1, eg_p2)
         eg_vec23 = vec(eg_p2, eg_p3)
 
-        if vec_len(vec12) / vec_len(eg_vec12) < 0.3 or vec_len(vec23) / vec_len(eg_vec23) < 0.3:
+        if vec_len(vec12) / vec_len(eg_vec12) < 0.4  or vec_len(vec23) / vec_len(eg_vec23) < 0.4 :
             ang = 0
 
         ang_ratio2 = ang / (eg_ang + epsilon)
 
 
-        score_l.append(min(ang_ratio1,ang_ratio2))
+        # score_l.append(min(ang_ratio1,ang_ratio2))
+        if min(ang_ratio1,ang_ratio2) < 0.1:
+            resretu = 0
+        else:
+            resretu = (ang_ratio1+ang_ratio2)/2
+
+        score_l.append(resretu) ##deldel
+
 
         if vis_ornot:
             xx, yy = getXY([p1, p2, p3])
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 角度: ' + str(ang))
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度2: ' + str(ang))
 
             xx, yy = getXY([eg_p1, eg_p2, eg_p3])
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('r-')
-            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度: ' + str(eg_ang))
-
+            l.reviews_line.append(dim_CN_l[idx] + ' 范字角度2: ' + str(eg_ang))
+            
             xx, yy = getXY([p_x])
             l.xs_line.append(xx)
             l.ys_line.append(yy)
             l.marks_line.append('b.')
-            l.reviews_line.append(dim_CN_l[idx] + ' 角度比值: ' + str(score_l[-1]))
+            # l.reviews_line.append(dim_CN_l[idx] + ' 角度比值: ' + str(score_l[-1]))
+            l.reviews_line.append(dim_CN_l[idx] + ' 角度比值: ' + str(min(ang_ratio1,ang_ratio2))) ##deldel
+
 
     return dim_key_l, score_l
-
-
-
-
-
+##### =======================================================================================================
 def evaluate_middle_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
     """短横相对长横不居中"""
 
@@ -5096,8 +5164,4 @@ def evaluate_middle_func(p_slope_d, p_Transed_l, eg_p_l, p_l,vis_ornot ):
             l.reviews_line.append('')
 
     return dim_key_l,score_l
-
-
-
-
-
+##### =======================================================================================================

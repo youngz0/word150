@@ -22,7 +22,7 @@ zhfont = mpl.font_manager.FontProperties(fname = '/usr/share/fonts/truetype/arph
 # # # # # =======================================================================================================
 '''# 把标注的json格式转成打分时需要的格式'''
 def cnvjsforscore(whichword):
-    df_cfg=pd.read_csv('./prefilecfg/id_word_title.csv')
+    df_cfg=pd.read_excel('./prefilecfg/id_word_title.xlsx')
     idex = list(df_cfg[df_cfg['word'] == whichword].index.values)[0]
     whichwd = df_cfg.loc[idex,'pinyin']
     pth1 = os.path.join('./words_150/',whichwd,'ai_data/')
@@ -143,7 +143,7 @@ def step0_getjs2csvpre(whichword):
                 keyl.sort()
                 for k in keyl:
                     tes.append([i+'__'+j+'__'+k,temp[i][j][k]['name'],temp[i][j]['name']])
-        df = pd.read_excel(templatecsvnm,sep=',',header=None,index_col=None)
+        df = pd.read_excel(templatecsvnm,sep=',',header=None,index_col=None)    
         colnm = pd.read_excel(templatecsvnm,sep=',',skiprows=24,nrows=0,header=0)
         wdpinyin = df_cfg.loc[idex,'pinyin']
         # 'smbpath	/run/user/1000/gvfs/smb-share:server=192.168.60.181,share=share/sfq/word150/'
@@ -583,29 +583,29 @@ def final_run_ver(whichworld,is_save):
     word = review_word(con,is_save)
     word.cal_score()
 # # # # # =======================================================================================================
-def figrename(whichword,nmb):
+def figrename8(whichword,nmb,savpath):
     fltoread = glob('./pre_csv/'+'*'+whichword+'.csv')
     if fltoread != []:
         df = pd.read_csv(fltoread[0],sep=',',skiprows=24,header=0)
         df['dimensionname'] =  list(map(lambda x,y:x+'__'+y,list(df['dimensionname']),list(df['whichrowpnb'])))
         dm = list(df[df['delete_or_not'] != 4]['dimensionname'])[0]
         print('dim: %s   含义： %s   所用函数： %s'%(dm,list(df[df['dimensionname'] == dm]['meaning'])[0],list(df[df['dimensionname'] == dm]['funcname'])[0]))
-        foldername = list(df[df['dimensionname'] == dm]['stroke'])[0]+'_'+list(df[df['dimensionname'] == dm]['meaning'])[0]
+        foldername = '_'.join([df.loc[0,'stroke'],list(df[df['dimensionname'] == dm]['stroke'])[0],list(df[df['dimensionname'] == dm]['meaning'])[0]])
     csv_path ='./words_150/'+whichword+'/'
     flt = glob(csv_path+'*'+ whichword+'.csv')
     if flt != []:
         df_2 = pd.read_csv(flt[0])
         df2 = df_2.sort_values(by=dm , ascending=False)
         df2 = df2.reset_index(drop=True)
-    srtest = 'cp -r  '+ csv_path+'vis_result  ' + csv_path+'vis_result_'+foldername
-    'cp -r  {} vis_result  {} vis_result_{}'.format(csv_path,csv_path,foldername)
+    # srtest = 'cp -r  '+ csv_path+'vis_result  ' + csv_path+'vis_result_'+foldername
+    srtest = 'cp -r  {}vis_result  {}'.format(csv_path,savpath+foldername)
     if not os.path.exists(csv_path+'vis_result_'+foldername):
         print(srtest)
         os.system(srtest)
     for i in list(df2[dm]):
         idxnm = list(df2[df2[dm] == i].index)[0]
-        nam1 = os.path.join(csv_path,'vis_result_'+foldername,list(df2[df2[dm] == i]['00_pic_name_l'])[0])
-        nam2 = os.path.join(csv_path,'vis_result_'+foldername,"%03d" % idxnm +'____'+str(i)+'____'+list(df2[df2[dm] == i]['00_pic_name_l'])[0])
+        nam1 = os.path.join(savpath+foldername,list(df2[df2[dm] == i]['00_pic_name_l'])[0])
+        nam2 = os.path.join(savpath+foldername,"%03d" % idxnm +'____'+str(i)+'____'+list(df2[df2[dm] == i]['00_pic_name_l'])[0])        
         try:
             os.rename(nam1,nam2)
         except:
@@ -890,3 +890,73 @@ class review_word():
                 print('-------- testing {}  {}'.format('-'*50,figname))
             df3.to_csv(self.csv_savepath + self.meanstdcsvname + '.csv')
             df3.to_csv(self.finalrespath +'/'+ self.meanstdcsvname + '.csv')
+
+''' 反馈计算不准时， 在pre_csv 文件夹内修改对应字的xlsx 文件，前23行不变（夸、鼓励）24行开始保留要检查的 笔画维度，本部分对24开始的每一行vis_or_not置1
+    并按照计算结果对该维度 在 dim_score_pinyin.csv 文件中按照该列进行排序，对生成图片重命名  方便按计算结果顺序查看'''
+'''会在pinyin.xlsx  中 vis_or_not 置1 的 每一行单独生成一个csv文件'''
+
+def checkerror(hanzi):
+    df_cfg=pd.read_excel('./prefilecfg/id_word_title.xlsx')
+    df = df_cfg.set_index(['word'])
+    pinyin = df.loc[hanzi,'pinyin']
+    filenm = './pre_csv/'+pinyin+'.xlsx'
+    df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0)
+    vis = df_2[df_2['vis_or_not'] == 1]
+    for i in vis.index:
+        df_1 = pd.read_excel(filenm,sep=',',nrows=25,header=None)
+        df_1.to_csv('./pre_csv/' + pinyin + '.csv',mode='w',index=False,header=False)
+        df3pre = df_2[df_2['delete_or_not'] == 4]
+        df3pre.to_csv('./pre_csv/' + pinyin + '.csv',mode='a',index=False,header=False)
+        df_3 = df_2.loc[[i],:]
+        df_3.to_csv('./pre_csv/' + pinyin + '.csv',mode='a',index=False,header=False)
+        final_run_ver(hanzi,1)
+        figrename(pinyin,i)
+
+# if __name__ == '__main__':
+#     # lst = '岁 处 丫 芝 方 甘 内 氏 本 人'.split(' ')
+#     # lst = '虫'.split(' ')
+#     for par in lst:
+#         checkerror(par)
+flder = './instances_20210201/2021-01-28-19-18-43/'
+
+whichword = '本'
+df_cfg=pd.read_excel('./prefilecfg/id_word_title.xlsx')
+df = df_cfg.set_index(['word'])
+pinyin = df.loc[whichword,'pinyin']
+
+revdf = pd.read_excel('./pre_xlsx/{}.xlsx'.format(whichword),index_col=0)
+
+for i in revdf.index:
+    picl = glob(flder + '*' + str(i) + '*')
+    rmcmd1 = 'rm -r {}/*.*'.format(os.path.join('./words_150/',pinyin,'ai_data'))
+    os.system(rmcmd1)
+    # rmcmd2 = 'rm -r {}/*.*'.format(os.path.join('./words_150/',pinyin,'vis_result'))
+    # os.system(rmcmd2)
+    savpth = os.path.join('./words_150/',pinyin,str(i))
+    for j in picl:
+        pth = os.path.join('./words_150/',pinyin,str(i))
+        if not os.path.exists(pth):os.makedirs(pth)
+        cpcmd = 'cp {} {}'.format(j, os.path.join(pth,j.split('/')[-1]))
+        os.system(cpcmd)
+
+        cpcmd1 = 'cp {} {}'.format(j, os.path.join('./words_150/',pinyin,'ai_data'))
+        os.system(cpcmd1)
+        # print(1)
+    
+    filenm = './pre_csv/'+pinyin+'.xlsx'
+    revcheckerrcsv = './pre_csv/'+pinyin+'.csv'
+    df_2 = pd.read_excel(filenm,sep=',',skiprows=24,header=0)
+    df_1 = pd.read_excel(filenm,sep=',',nrows=25,header=None)
+    df_1.to_csv(revcheckerrcsv,mode='w',index=False,header=False)
+    df3pre = df_2[df_2['delete_or_not'] == 4]
+    df3pre.to_csv(revcheckerrcsv,mode='a',index=False,header=False)
+
+    df2_ = df_2.set_index(['dimensionname'])
+    df2_.loc[[revdf.loc[i,'dimensionname']],'vis_or_not'] = 1
+    df_3 = df2_.loc[[revdf.loc[i,'dimensionname']]]
+    df_3.to_csv(revcheckerrcsv,mode='a',index=True,header=False)
+
+    final_run_ver(whichword,1)
+    figrename8(pinyin,i,savpth)
+    
+    print(1)
